@@ -10,8 +10,8 @@ app.use(cookieParser());
 
 // 1. DATABASE CONNECTION
 mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('✅ DATABASE: Connected to MongoDB Atlas'))
-    .catch(err => console.error('❌ DATABASE: Connection error:', err));
+    .then(() => console.log('✅ Connected to MongoDB'))
+    .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
 // 2. PUBLIC HOME PAGE
 app.get('/', (req, res) => {
@@ -80,8 +80,12 @@ app.get('/dashboard', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`); //
+
+// Only start the server if MongoDB connects successfully
+mongoose.connection.once('open', () => {
+    app.listen(PORT, () => {
+        console.log(`🚀 Server is active on port ${PORT}`); //
+    });
 });
 const User = require('./User'); // Add this at the top with your other requires
 
