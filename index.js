@@ -4,9 +4,13 @@ const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const Course = require('./Course');
+const User = require('./User');
 
 const app = express();
+
+// MIDDLEWARE (Must be before routes!)
 app.use(cookieParser());
+app.use(express.urlencoded({ extended: true }));
 
 // 1. DATABASE CONNECTION
 mongoose.connect(process.env.MONGO_URI)
@@ -29,6 +33,9 @@ app.get('/', (req, res) => {
                 <h1 class="text-4xl font-bold text-gray-800 mb-4 text-blue-600">Educa LMS</h1>
                 <p class="text-gray-600 mb-8 text-lg text-left">The server is live and connected to Google Cloud.</p>
                 <div class="space-y-4">
+                    <a href="/register" class="block w-full py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition shadow-md">
+                        Student Registration
+                    </a>
                     <a href="/add-sample-course" class="block w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
                         Add Sample Course (DB Test)
                     </a>
@@ -42,64 +49,12 @@ app.get('/', (req, res) => {
     `);
 });
 
-// 3. DATABASE ROUTE: Add a Course
-app.get('/add-sample-course', async (req, res) => {
-    try {
-        const newCourse = new Course({
-            title: "Cloud Engineering with Node.js",
-            description: "A premium course hosted on Render and MongoDB.",
-            instructor: "Stephen",
-            price: 450
-        });
-        await newCourse.save();
-        res.send("<h1>✅ Success!</h1><p>Check your MongoDB Atlas dashboard—the course is there.</p><a href='/'>Back Home</a>");
-    } catch (err) {
-        res.status(500).send("❌ Database Error: " + err);
-    }
-});
-
-// 4. SECURITY ROUTE: Login Demo
-app.get('/login-demo', (req, res) => {
-    const token = jwt.sign({ user: "Stephen", role: "admin" }, process.env.JWT_SECRET || 'super-secret-key');
-    res.cookie('token', token, { httpOnly: true });
-    res.send("<h1>🔐 Logged In</h1><p>Your browser now has a secure token. You can access the Dashboard.</p><a href='/dashboard'>Go to Dashboard</a>");
-});
-
-// 5. PROTECTED ADMIN ROUTE
-app.get('/dashboard', (req, res) => {
-    const token = req.cookies.token;
-    if (!token) {
-        return res.status(401).send("<h1>🚫 Access Denied</h1><p>You need a secure token to see this. <a href='/login-demo'>Click here to login.</a></p>");
-    }
-    try {
-        jwt.verify(token, process.env.JWT_SECRET || 'super-secret-key');
-        res.send("<h1>🛠️ Admin Dashboard</h1><p>Welcome back, Admin. You have full control over the database.</p><a href='/'>Back Home</a>");
-    } catch (err) {
-        res.status(403).send("Invalid Token.");
-    }
-});
-
-const PORT = process.env.PORT || 3000;
-
-// Only start the server if MongoDB connects successfully
-mongoose.connection.once('open', () => {
-    app.listen(PORT, () => {
-        console.log(`🚀 Server is active on port ${PORT}`); //
-    });
-});
-const User = require('./User'); // Add this at the top with your other requires
-
-// 6. STUDENT REGISTRATION PAGE (The Form)
+// 3. STUDENT REGISTRATION ROUTES
 app.get('/register', (req, res) => {
-    res.send(`
+    res.send(\`
         <!DOCTYPE html>
         <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Register | Educa LMS</title>
-            <script src="https://cdn.tailwindcss.com"></script>
-        </head>
+        <head><script src="https://cdn.tailwindcss.com"></script></head>
         <body class="bg-gray-100 flex items-center justify-center h-screen">
             <form action="/register-student" method="POST" class="bg-white p-8 rounded-lg shadow-md w-96">
                 <h2 class="text-2xl font-bold mb-6 text-gray-800">Student Registration</h2>
@@ -110,18 +65,54 @@ app.get('/register', (req, res) => {
             </form>
         </body>
         </html>
-    `);
+    \`);
 });
-app.use(express.urlencoded({ extended: true })); // Place this near app.use(cookieParser())
 
-// 7. POST ROUTE: Saving the Student to MongoDB
 app.post('/register-student', async (req, res) => {
     try {
         const { fullName, email, password } = req.body;
         const newStudent = new User({ fullName, email, password });
         await newStudent.save();
-        res.send(`<h1>✅ Welcome, ${fullName}!</h1><p>You are now registered. <a href="/">Back to Home</a></p>`);
+        res.send(\`<h1>✅ Welcome, \${fullName}!</h1><p>You are now registered. <a href="/">Back to Home</a></p>\`);
     } catch (err) {
         res.status(500).send("❌ Registration Error: " + err);
     }
+});
+
+// 4. COURSE ROUTES
+app.get('/add-sample-course', async (req, res) => {
+    try {
+        const newCourse = new Course({
+            title: "Cloud Engineering with Node.js",
+            description: "A premium course hosted on Render and MongoDB.",
+            instructor: "Stephen",
+            price: 450
+        });
+        await newCourse.save();
+        res.send("<h1>✅ Success!</h1><p>Check your MongoDB Atlas dashboard.</p><a href='/'>Back Home</a>");
+    } catch (err) {
+        res.status(500).send("❌ Database Error: " + err);
+    }
+});
+
+// 5. SECURITY & ADMIN ROUTES
+app.get('/login-demo', (req, res) => {
+    const token = jwt.sign({ user: "Stephen", role: "admin" }, process.env.JWT_SECRET || 'super-secret-key');
+    res.cookie('token', token, { httpOnly: true });
+    res.send("<h1>🔐 Logged In</h1><p>Access the Dashboard now.</p><a href='/dashboard'>Go to Dashboard</a>");
+});
+
+app.get('/dashboard', (req, res) => {
+    const token = req.cookies.token;
+    if (!token) return res.status(401).send("<h1>🚫 Access Denied</h1><a href='/login-demo'>Login</a>");
+    try {
+        jwt.verify(token, process.env.JWT_SECRET || 'super-secret-key');
+        res.send("<h1>🛠️ Admin Dashboard</h1><a href='/'>Back Home</a>");
+    } catch (err) { res.status(403).send("Invalid Token."); }
+});
+
+// 6. SERVER START
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(\`🚀 Server is active on port \${PORT}\`);
 });
