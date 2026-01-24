@@ -3,91 +3,83 @@ const express = require('express');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
+const Course = require('./Course');
+
 const app = express();
-
-const JWT_SECRET = "super-secret-key-123"; // Your Master Key
-
-app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Database Connection
+// 1. DATABASE CONNECTION
 mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log("✅ Secure Database Connected"))
-    .catch(err => console.log("❌ Error:", err));
+    .then(() => console.log('✅ DATABASE: Connected to MongoDB Atlas'))
+    .catch(err => console.error('❌ DATABASE: Connection error:', err));
 
-const Student = mongoose.model('Student', new mongoose.Schema({ name: String, email: String }));
-
-// Middleware: The "Security Guard"
-const checkToken = (req, res, next) => {
-    const token = req.cookies.token;
-    if (!token) return res.send("<h1>Access Denied</h1><p>You need a JWT Token to see this.</p><a href='/login-demo'>Login here</a>");
-    
-    try {
-        jwt.verify(token, JWT_SECRET);
-        next(); // Let them through!
-    } catch (err) {
-        res.send("Invalid Token");
-    }
-};
-
-// 1. Public Home Page
+// 2. PUBLIC HOME PAGE
 app.get('/', (req, res) => {
     res.send(`
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Educa LMS | Professional Learning</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50 flex items-center justify-center h-screen">
-    <div class="text-center p-8 bg-white shadow-2xl rounded-xl border-t-4 border-blue-600 max-w-lg mx-auto">
-        <h1 class="text-4xl font-bold text-gray-800 mb-4">Welcome to Educa LMS</h1>
-        <p class="text-gray-600 mb-8 text-lg">Your gateway to professional, cloud-based learning management.</p>
-        
-        <div class="space-y-4">
-            <a href="/dashboard" class="block w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
-                Go to Admin Dashboard (Protected)
-            </a>
-            <p class="text-sm text-gray-400 italic">Connected to Google Cloud & MongoDB Atlas</p>
-        </div>
-    </div>
-</body>
-</html>
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Educa LMS | Professional Learning</title>
+            <script src="https://cdn.tailwindcss.com"></script>
+        </head>
+        <body class="bg-gray-50 flex items-center justify-center h-screen">
+            <div class="text-center p-8 bg-white shadow-2xl rounded-xl border-t-4 border-blue-600 max-w-lg mx-auto">
+                <h1 class="text-4xl font-bold text-gray-800 mb-4 text-blue-600">Educa LMS</h1>
+                <p class="text-gray-600 mb-8 text-lg text-left">The server is live and connected to Google Cloud.</p>
+                <div class="space-y-4">
+                    <a href="/add-sample-course" class="block w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
+                        Add Sample Course (DB Test)
+                    </a>
+                    <a href="/dashboard" class="block w-full py-3 border border-blue-600 text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition">
+                        Go to Admin Dashboard (Protected)
+                    </a>
+                </div>
+            </div>
+        </body>
+        </html>
     `);
 });
 
-// 2. Login Route (Generates the JWT)
+// 3. DATABASE ROUTE: Add a Course
+app.get('/add-sample-course', async (req, res) => {
+    try {
+        const newCourse = new Course({
+            title: "Cloud Engineering with Node.js",
+            description: "A premium course hosted on Render and MongoDB.",
+            instructor: "Stephen",
+            price: 450
+        });
+        await newCourse.save();
+        res.send("<h1>✅ Success!</h1><p>Check your MongoDB Atlas dashboard—the course is there.</p><a href='/'>Back Home</a>");
+    } catch (err) {
+        res.status(500).send("❌ Database Error: " + err);
+    }
+});
+
+// 4. SECURITY ROUTE: Login Demo
 app.get('/login-demo', (req, res) => {
-    const token = jwt.sign({ user: "Stephen" }, JWT_SECRET, { expiresIn: '1h' });
-    res.cookie('token', token); // Give the "ID Card" to the browser
-    res.send("<h1>Logged In!</h1><p>Your JWT 'Digital ID' has been issued.</p><a href='/admin'>Enter Admin Dashboard</a>");
+    const token = jwt.sign({ user: "Stephen", role: "admin" }, process.env.JWT_SECRET || 'super-secret-key');
+    res.cookie('token', token, { httpOnly: true });
+    res.send("<h1>🔐 Logged In</h1><p>Your browser now has a secure token. You can access the Dashboard.</p><a href='/dashboard'>Go to Dashboard</a>");
 });
 
-// 3. Protected Admin Page
-app.get('/admin', checkToken, async (req, res) => {
-    const students = await Student.find();
-    res.send(`
-        <h1>Admin Dashboard</h1>
-        <p>Verified by JSON Web Token (JWT) ✅</p>
-        <form action="/enroll" method="POST">
-            <input type="text" name="name" placeholder="Student Name" required>
-            <button type="submit">Enroll</button>
-        </form>
-        <ul>${students.map(s => `<li>${s.name}</li>`).join('')}</ul>
-        <br><a href='/logout'>Logout</a>
-    `);
+// 5. PROTECTED ADMIN ROUTE
+app.get('/dashboard', (req, res) => {
+    const token = req.cookies.token;
+    if (!token) {
+        return res.status(401).send("<h1>🚫 Access Denied</h1><p>You need a secure token to see this. <a href='/login-demo'>Click here to login.</a></p>");
+    }
+    try {
+        jwt.verify(token, process.env.JWT_SECRET || 'super-secret-key');
+        res.send("<h1>🛠️ Admin Dashboard</h1><p>Welcome back, Admin. You have full control over the database.</p><a href='/'>Back Home</a>");
+    } catch (err) {
+        res.status(403).send("Invalid Token.");
+    }
 });
 
-app.get('/logout', (req, res) => {
-    res.clearCookie('token');
-    res.redirect('/');
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`); //
 });
-
-app.post('/enroll', checkToken, async (req, res) => {
-    await new Student({ name: req.body.name }).save();
-    res.redirect('/admin');
-});
-
-app.listen(3000, () => console.log('🚀 Secure Server @ http://localhost:3000'));
