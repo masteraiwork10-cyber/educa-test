@@ -32,7 +32,30 @@ const checkToken = (req, res, next) => {
 
 // 1. Public Home Page
 app.get('/', (req, res) => {
-    res.send("<h1>Welcome to Educa LMS</h1><p>This is a public page.</p><a href='/admin'>Go to Admin Dashboard (Protected)</a>");
+    res.send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Educa LMS | Professional Learning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 flex items-center justify-center h-screen">
+    <div class="text-center p-8 bg-white shadow-2xl rounded-xl border-t-4 border-blue-600 max-w-lg mx-auto">
+        <h1 class="text-4xl font-bold text-gray-800 mb-4">Welcome to Educa LMS</h1>
+        <p class="text-gray-600 mb-8 text-lg">Your gateway to professional, cloud-based learning management.</p>
+        
+        <div class="space-y-4">
+            <a href="/dashboard" class="block w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
+                Go to Admin Dashboard (Protected)
+            </a>
+            <p class="text-sm text-gray-400 italic">Connected to Google Cloud & MongoDB Atlas</p>
+        </div>
+    </div>
+</body>
+</html>
+    `);
 });
 
 // 2. Login Route (Generates the JWT)
