@@ -83,3 +83,41 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`); //
 });
+const User = require('./User'); // Add this at the top with your other requires
+
+// 6. STUDENT REGISTRATION PAGE (The Form)
+app.get('/register', (req, res) => {
+    res.send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Register | Educa LMS</title>
+            <script src="https://cdn.tailwindcss.com"></script>
+        </head>
+        <body class="bg-gray-100 flex items-center justify-center h-screen">
+            <form action="/register-student" method="POST" class="bg-white p-8 rounded-lg shadow-md w-96">
+                <h2 class="text-2xl font-bold mb-6 text-gray-800">Student Registration</h2>
+                <input type="text" name="fullName" placeholder="Full Name" class="w-full p-2 mb-4 border rounded" required>
+                <input type="email" name="email" placeholder="Email Address" class="w-full p-2 mb-4 border rounded" required>
+                <input type="password" name="password" placeholder="Create Password" class="w-full p-2 mb-6 border rounded" required>
+                <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Register Now</button>
+            </form>
+        </body>
+        </html>
+    `);
+});
+app.use(express.urlencoded({ extended: true })); // Place this near app.use(cookieParser())
+
+// 7. POST ROUTE: Saving the Student to MongoDB
+app.post('/register-student', async (req, res) => {
+    try {
+        const { fullName, email, password } = req.body;
+        const newStudent = new User({ fullName, email, password });
+        await newStudent.save();
+        res.send(`<h1>✅ Welcome, ${fullName}!</h1><p>You are now registered. <a href="/">Back to Home</a></p>`);
+    } catch (err) {
+        res.status(500).send("❌ Registration Error: " + err);
+    }
+});
