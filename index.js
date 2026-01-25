@@ -50,7 +50,7 @@ app.get('/', (req, res) => {
             <script src="https://cdn.tailwindcss.com"></script>
         </head>
         <body class="bg-gray-50 flex items-center justify-center h-screen">
-            <div class="text-center p-8 bg-white shadow-2xl rounded-xl border-t-4 border-blue-600 max-w-lg mx-auto">
+            <div class="text-center p-8 bg-white shadow-2xl rounded-xl border-t-4 border-blue-600 max-w-lg mx-auto w-full">
                 <h1 class="text-4xl font-bold text-gray-800 mb-4 text-blue-600">Educa LMS</h1>
                 <div class="grid grid-cols-1 gap-4 text-left">
                     <a href="/register" class="block w-full py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition text-center">Student Registration</a>
@@ -168,7 +168,7 @@ app.post('/upload-syllabus', upload.single('syllabus'), async (req, res) => {
         await Course.findOneAndUpdate(
             { title: "Cloud Engineering with Node.js" },
             { syllabusUrl: fileUrl },
-            { upsert: true } // Creates it if it doesn't exist
+            { upsert: true }
         );
         res.send(`<h1>✅ Upload Success</h1><a href="/dashboard">Back to Dashboard</a>`);
     } catch (err) { res.status(500).send("Upload Error: " + err.message); }
@@ -182,7 +182,7 @@ app.post('/student-login', async (req, res) => {
         if (!student) return res.send("<h1>❌ Email not found</h1><a href='/'>Back</a>");
 
         let myCourses = student.enrolledCourses.map(c => `
-            <li class="bg-blue-50 p-4 mb-3 rounded-xl flex justify-between items-center">
+            <li class="bg-blue-50 p-4 mb-3 rounded-xl flex justify-between items-center border border-blue-100">
                 <div>
                     <span class="block text-xs text-blue-400 uppercase font-bold">Course</span>
                     <span class="text-blue-900 font-bold">📚 ${c.title}</span>
@@ -203,10 +203,15 @@ app.post('/student-login', async (req, res) => {
     } catch (err) { res.status(500).send("Login Error: " + err.message); }
 });
 
-// 10. EXTRA UTILITIES (Enroll, Delete, Sample, Cert, 404)
+// 10. EXTRA UTILITIES
 app.get('/add-sample-course', async (req, res) => {
     try {
-        const newCourse = new Course({ title: "Cloud Engineering with Node.js", instructor: "Stephen", price: 450 });
+        const newCourse = new Course({ 
+            title: "Cloud Engineering with Node.js", 
+            instructor: "Stephen", 
+            price: 450,
+            description: "A comprehensive guide to backend cloud architecture." // FIXED: Added description
+        });
         await newCourse.save();
         res.send("<h1>✅ Course Added</h1><a href='/'>Back Home</a>");
     } catch (err) { res.status(500).send("Error: " + err.message); }
