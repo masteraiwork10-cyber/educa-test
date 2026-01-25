@@ -110,27 +110,36 @@ app.get('/dashboard', async (req, res) => {
         jwt.verify(token, process.env.JWT_SECRET || 'super-secret-key');
         
         // Fetch students from DB
-        const students = await User.find({});
+        // This 'populates' the enrolledCourses field with the actual Course data
+        const students = await User.find({}).populate('enrolledCourses');
         
         // Generate table rows
         // REPLACE THIS BLOCK inside app.get('/dashboard')
-        let studentRows = students.map(s => `
-            <tr class="border-b hover:bg-gray-50">
-                <td class="p-3 text-gray-700 font-medium">${s.fullName}</td>
-                <td class="p-3 text-gray-700">${s.email}</td>
-                <td class="p-3 text-center space-x-2">
-                    <a href="/enroll-student/${s._id}" 
-                       class="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-bold hover:bg-blue-200">
-                       Enroll
-                    </a>
-                    <a href="/delete-student/${s._id}" 
-                       onclick="return confirm('Delete this student?')" 
-                       class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm font-bold hover:bg-red-200">
-                       Delete
-                    </a>
-                </td>
-            </tr>
-        `).join('');
+        let studentRows = students.map(s => {
+            // Get the names of all courses the student is in
+            const courseNames = s.enrolledCourses.map(c => c.title).join(', ') || 'No Courses';
+
+            return `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="p-3 text-gray-700 font-medium">${s.fullName}</td>
+                    <td class="p-3 text-gray-600 text-sm">
+                        <span class="block font-bold text-blue-500">${courseNames}</span>
+                        ${s.email}
+                    </td>
+                    <td class="p-3 text-center space-x-2">
+                        <a href="/enroll-student/${s._id}" 
+                           class="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-bold hover:bg-blue-200">
+                           Enroll
+                        </a>
+                        <a href="/delete-student/${s._id}" 
+                           onclick="return confirm('Delete this student?')" 
+                           class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm font-bold hover:bg-red-200">
+                           Delete
+                        </a>
+                    </td>
+                </tr>
+            `;
+        }).join('');
 
         res.send(`
             <!DOCTYPE html>
