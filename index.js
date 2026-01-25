@@ -62,9 +62,7 @@ app.get('/register', (req, res) => {
                 <input type="email" name="email" placeholder="Email Address" class="w-full p-2 mb-4 border rounded" required>
                 <input type="password" name="password" placeholder="Create Password" class="w-full p-2 mb-6 border rounded" required>
                 <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Register Now</button>
-                // ADD THIS inside the home page UI div, below the existing buttons
-// REPLACE the Student Portal section in your Home Page UI
-<div class="mt-10 pt-6 border-t border-gray-100">
+                <div class="mt-10 pt-6 border-t border-gray-100">
     <h3 class="text-sm font-bold text-gray-400 uppercase mb-4 text-center">Student Portal</h3>
     <form action="/student-login" method="POST" class="flex flex-col gap-2">
         <input type="email" name="email" placeholder="Your Registered Email" 
@@ -228,30 +226,36 @@ app.get('/enroll-student/:id', async (req, res) => {
 // 6. SERVER START
 const PORT = process.env.PORT || 3000;
 // 10. STUDENT LOGIN ROUTE (For Peter to see his courses)
+// ADD/CHECK THIS at the bottom of index.js
 app.post('/student-login', async (req, res) => {
     try {
         const { email } = req.body;
-        // Find user by email
+        // Search the database for the student 
         const student = await User.findOne({ email }).populate('enrolledCourses');
 
         if (!student) {
-            return res.send("<h1>❌ Login Failed</h1><p>Email not found.</p><a href='/'>Try again</a>");
+            return res.send("<h1>❌ Email not found</h1><p>Please register first.</p><a href='/'>Back</a>");
         }
 
-        // Generate a Student Token (Peter's ID is stored in the token)
-        const token = jwt.sign({ id: student._id }, process.env.JWT_SECRET || 'super-secret-key');
-        res.cookie('studentToken', token, { httpOnly: true });
+        // Create a simple Private Student View
+        let myCourses = student.enrolledCourses.map(c => `
+            <li class="bg-blue-50 p-3 mb-2 rounded border border-blue-100 text-blue-800 font-medium">
+                📚 ${c.title}
+            </li>
+        `).join('');
 
-        // Show Peter his private course list
-        let myCourses = student.enrolledCourses.map(c => `<li>✅ ${c.title}</li>`).join('');
-        
         res.send(`
-            <body style="font-family: sans-serif; padding: 40px;">
-                <h1>👋 Welcome, ${student.fullName}</h1>
-                <h3>Your Enrolled Courses:</h3>
-                <ul>${myCourses || '<li>You are not enrolled in any courses yet.</li>'}</ul>
-                <a href="/">Log Out</a>
-            </body>
+            <div style="font-family: sans-serif; max-width: 500px; margin: 50px auto; padding: 30px; border: 1px solid #eee; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
+                <h1 style="color: #1a202c;">Welcome back, ${student.fullName}!</h1>
+                <p style="color: #718096;">You are logged in as ${student.email}</p>
+                <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+                <h3 style="color: #2d3748;">My Enrolled Courses:</h3>
+                <ul style="list-style: none; padding: 0;">
+                    ${myCourses || '<li style="color: #a0aec0;">No courses found.</li>'}
+                </ul>
+                <br>
+                <a href="/" style="display: inline-block; padding: 10px 20px; background: #ebf8ff; color: #3182ce; text-decoration: none; border-radius: 8px; font-weight: bold;">Logout</a>
+            </div>
         `);
     } catch (err) {
         res.status(500).send("Login Error: " + err.message);
