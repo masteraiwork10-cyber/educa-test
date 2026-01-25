@@ -18,20 +18,20 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// 3. FILE UPLOAD CONFIGURATION
-const uploadDir = './uploads';
+// 3. FILE UPLOAD CONFIGURATION (Multer)
+const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)){
-    fs.mkdirSync(uploadDir);
+    fs.mkdirSync(uploadDir, { recursive: true });
 }
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
+  destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
 });
 const upload = multer({ storage: storage });
 
-// Make the uploads folder accessible to browsers
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Serve static files from the 'uploads' directory
+app.use('/uploads', express.static(uploadDir));
 
 // 4. DATABASE CONNECTION
 mongoose.connect(process.env.MONGO_URI)
@@ -136,7 +136,7 @@ app.get('/dashboard', async (req, res) => {
                             <p class="text-blue-100">Total Students: ${totalStudents}</p>
                         </div>
                         <form action="/dashboard" method="GET" class="flex gap-2">
-                            <input type="text" name="search" placeholder="Search..." class="p-2 rounded text-gray-800 text-sm" value="${searchQuery}">
+                            <input type="text" name="search" placeholder="Search..." class="p-2 rounded text-gray-800 text-sm outline-none" value="${searchQuery}">
                             <button type="submit" class="bg-blue-800 px-4 py-2 rounded text-sm font-bold">Search</button>
                         </form>
                     </div>
@@ -210,7 +210,7 @@ app.get('/add-sample-course', async (req, res) => {
             title: "Cloud Engineering with Node.js", 
             instructor: "Stephen", 
             price: 450,
-            description: "A comprehensive guide to backend cloud architecture." // FIXED: Added description
+            description: "Learn how to build and deploy high-performance applications to the cloud." // DESCRIPTION ADDED HERE
         });
         await newCourse.save();
         res.send("<h1>✅ Course Added</h1><a href='/'>Back Home</a>");
@@ -226,8 +226,10 @@ app.get('/enroll-student/:id', async (req, res) => {
 });
 
 app.get('/delete-student/:id', async (req, res) => {
-    await User.findByIdAndDelete(req.params.id);
-    res.redirect('/dashboard');
+    try {
+        await User.findByIdAndDelete(req.params.id);
+        res.redirect('/dashboard');
+    } catch (err) { res.status(500).send("Error: " + err.message); }
 });
 
 app.get('/login-demo', (req, res) => {
