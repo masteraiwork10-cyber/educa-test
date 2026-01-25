@@ -1,207 +1,141 @@
-require('dotenv').config();
-const express = require('express');
-const mongoose = require('mongoose');
-const jwt = require('jsonwebtoken');
-const cookieParser = require('cookie-parser');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const PDFDocument = require('pdfkit');
+// ... (Keep all your existing requires, middleware, and database connections from V8)
 
-// 1. MODELS
-const Course = require('./Course');
-const User = require('./User');
-
-const app = express();
-
-// 2. MIDDLEWARE
-app.use(cookieParser());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-
-// 3. FILE UPLOAD CONFIG
-const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
-});
-const upload = multer({ storage: storage });
-app.use('/uploads', express.static(uploadDir));
-
-// 4. DB CONNECTION
-mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('✅ Connected to MongoDB'))
-    .catch(err => console.error('❌ MongoDB Connection Error:', err));
-
-// 5. PUBLIC INSTRUCTOR PORTFOLIO (New Feature!)
-app.get('/portfolio/:name', async (req, res) => {
+// 5. PROFESSIONAL HOME PAGE (Hero, Cards, Header, Footer)
+app.get('/', async (req, res) => {
     try {
-        const courses = await Course.find({ instructor: req.params.name });
-        const totalStudents = await User.countDocuments(); // Simplified for demo
-        
-        const courseList = courses.map(c => `
-            <div class="p-4 border-l-4 border-blue-500 bg-white shadow-sm rounded-r-xl">
-                <h3 class="font-bold text-slate-800">${c.title}</h3>
-                <p class="text-xs text-slate-500">${c.description}</p>
+        const courses = await Course.find(); // Fetch real courses from your DB
+
+        const courseCards = courses.map(c => `
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl transition duration-300 flex flex-col">
+                <div class="h-48 bg-blue-600 flex items-center justify-center text-white text-4xl font-bold">
+                    ${c.title[0]}
+                </div>
+                <div class="p-6 flex-grow">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="bg-blue-100 text-blue-600 text-[10px] font-bold px-2 py-1 rounded-full uppercase">Bestseller</span>
+                        <span class="text-slate-900 font-bold">$${c.price}</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">${c.title}</h3>
+                    <p class="text-slate-500 text-sm mb-4 line-clamp-2">${c.description}</p>
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-500">${c.instructor[0]}</div>
+                        <span class="text-xs text-slate-600 font-medium">${c.instructor}</span>
+                    </div>
+                </div>
+                <div class="p-6 pt-0">
+                    <a href="/register" class="block w-full text-center py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-black transition">Enroll Now</a>
+                </div>
             </div>
         `).join('');
 
         res.send(`
-            <head><script src="https://cdn.tailwindcss.com"></script></head>
-            <body class="bg-slate-50 p-8 font-sans">
-                <div class="max-w-2xl mx-auto text-center">
-                    <div class="w-24 h-24 bg-blue-600 rounded-full mx-auto mb-4 flex items-center justify-center text-white text-3xl font-black">
-                        ${req.params.name[0]}
-                    </div>
-                    <h1 class="text-3xl font-black text-slate-800">${req.params.name}</h1>
-                    <p class="text-slate-400 mb-8">Verified Expert Instructor</p>
-                    
-                    <div class="grid grid-cols-2 gap-4 mb-8">
-                        <div class="bg-white p-6 rounded-2xl shadow-sm">
-                            <span class="block text-2xl font-black text-blue-600">${courses.length}</span>
-                            <span class="text-xs font-bold text-slate-400 uppercase">Courses</span>
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <script src="https://cdn.tailwindcss.com"></script>
+                <title>Educa | Premium Learning</title>
+            </head>
+            <body class="bg-slate-50 font-sans text-slate-900">
+
+                <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100">
+                    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+                        <div class="flex items-center gap-8">
+                            <a href="/" class="text-2xl font-black tracking-tighter text-blue-600">EDUCA.</a>
+                            <div class="hidden md:flex gap-6 text-sm font-bold text-slate-500">
+                                <a href="#" class="hover:text-blue-600 transition">Explore</a>
+                                <a href="/portfolio/Stephen" class="hover:text-blue-600 transition">Instructors</a>
+                            </div>
                         </div>
-                        <div class="bg-white p-6 rounded-2xl shadow-sm">
-                            <span class="block text-2xl font-black text-green-600">${totalStudents}+</span>
-                            <span class="text-xs font-bold text-slate-400 uppercase">Students</span>
+                        <div class="flex items-center gap-4">
+                            <a href="/dashboard" class="text-sm font-bold text-slate-600 px-4 py-2 hover:bg-slate-100 rounded-lg transition">Admin</a>
+                            <a href="/register" class="bg-blue-600 text-white px-6 py-2.5 rounded-full font-bold text-sm hover:shadow-lg hover:shadow-blue-200 transition">Get Started</a>
                         </div>
                     </div>
+                </nav>
 
-                    <div class="text-left space-y-4">
-                        <h2 class="font-bold text-slate-800 uppercase text-xs tracking-widest">Available Courses</h2>
-                        ${courseList || '<p class="text-slate-400">No courses published yet.</p>'}
+                <section class="relative bg-white py-20 overflow-hidden">
+                    <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
+                        <div class="relative z-10">
+                            <span class="inline-block px-4 py-1.5 mb-6 text-xs font-bold tracking-widest text-blue-600 uppercase bg-blue-50 rounded-full">Future of Learning</span>
+                            <h1 class="text-5xl md:text-7xl font-black leading-tight mb-6 text-slate-900">
+                                Master Skills That <span class="text-blue-600">Matter.</span>
+                            </h1>
+                            <p class="text-lg text-slate-500 mb-10 max-w-lg leading-relaxed">
+                                Join over 5,000 students learning from top industry experts. Get certified, get noticed, and build the career you've always wanted.
+                            </p>
+                            <div class="flex flex-col sm:flex-row gap-4">
+                                <form action="/student-login" method="POST" class="flex p-1.5 bg-slate-100 rounded-2xl border border-slate-200 w-full max-w-md">
+                                    <input type="email" name="email" placeholder="student@example.com" class="bg-transparent px-4 py-2 w-full outline-none text-sm" required>
+                                    <button class="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-black transition whitespace-nowrap">Portal Login</button>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="relative hidden md:block">
+                            <div class="absolute -top-20 -right-20 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse"></div>
+                            <div class="absolute -bottom-20 -left-20 w-72 h-72 bg-purple-100 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse delay-700"></div>
+                            <div class="relative bg-slate-100 rounded-3xl h-[500px] border border-slate-200 flex items-center justify-center overflow-hidden">
+                                 <span class="text-slate-300 font-black text-9xl">LMS</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="py-24 max-w-7xl mx-auto px-6">
+                    <div class="flex justify-between items-end mb-12">
+                        <div>
+                            <h2 class="text-3xl font-black text-slate-900 mb-2">Featured Courses</h2>
+                            <p class="text-slate-500">Handpicked projects for your professional growth.</p>
+                        </div>
+                        <a href="/add-sample-course" class="text-blue-600 font-bold hover:underline">Add New Course +</a>
                     </div>
                     
-                    <a href="/" class="inline-block mt-12 text-blue-600 font-bold text-sm">← Back to Educa Home</a>
-                </div>
-            </body>
-        `);
-    } catch (err) { res.status(500).send("Error loading portfolio."); }
-});
-
-// 6. HOME PAGE
-app.get('/', (req, res) => {
-    res.send(`
-        <head><script src="https://cdn.tailwindcss.com"></script></head>
-        <body class="bg-slate-50 flex items-center justify-center h-screen font-sans">
-            <div class="text-center p-10 bg-white shadow-2xl rounded-3xl border-b-8 border-blue-600 max-w-md w-full">
-                <h1 class="text-5xl font-black text-slate-800 mb-2">Educa<span class="text-blue-600">.</span></h1>
-                <p class="text-slate-400 mb-8 font-medium">Professional LMS Core</p>
-                <div class="space-y-3">
-                    <a href="/register" class="block py-4 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition">Student Join</a>
-                    <a href="/portfolio/Stephen" class="block py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition">View Instructor Portfolio</a>
-                    <a href="/dashboard" class="block py-4 border-2 border-slate-200 text-slate-600 font-bold rounded-2xl hover:bg-slate-50 transition">Admin Panel</a>
-                    <div class="pt-6 mt-6 border-t">
-                        <form action="/student-login" method="POST" class="space-y-2">
-                            <input type="email" name="email" placeholder="Student Email" class="w-full p-4 bg-slate-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-400" required>
-                            <button class="w-full py-4 bg-slate-800 text-white font-bold rounded-xl hover:bg-black transition">Login to Portal</button>
-                        </form>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        ${courseCards || '<p class="text-slate-400">Loading courses...</p>'}
                     </div>
-                </div>
-            </div>
-        </body>
-    `);
-});
+                </section>
 
-// [KEEPING ALL PREVIOUS ROUTES: /download-invoice, /dashboard, /update-progress, /upload-syllabus, /student-login, /register, /add-sample-course, /enroll-student, /delete-student, /login-demo, /view-certificate]
-
-// 7. INVOICE GENERATOR
-app.get('/download-invoice/:id', async (req, res) => {
-    const student = await User.findById(req.params.id).populate('enrolledCourses');
-    const doc = new PDFDocument();
-    res.setHeader('Content-disposition', `attachment; filename=Invoice.pdf`);
-    doc.fontSize(20).text('OFFICIAL RECEIPT', { align: 'center' });
-    doc.moveDown().fontSize(12).text(`Student: ${student.fullName}`);
-    student.enrolledCourses.forEach(c => doc.text(`${c.title}: $${c.price}`));
-    doc.pipe(res); doc.end();
-});
-
-// 8. ADMIN DASHBOARD
-app.get('/dashboard', async (req, res) => {
-    const token = req.cookies.token;
-    if (!token) return res.status(401).send("Unauthorized");
-    try {
-        jwt.verify(token, process.env.JWT_SECRET || 'super-secret-key');
-        const students = await User.find().populate('enrolledCourses');
-        let rows = students.map(s => `
-            <tr class="border-b text-sm">
-                <td class="p-4 font-bold text-slate-700">${s.fullName}</td>
-                <td class="p-4">
-                    <form action="/update-progress/${s._id}" method="POST" class="flex items-center gap-2">
-                        <input type="number" name="progress" value="${s.courseProgress || 0}" min="0" max="100" class="w-16 p-1 border rounded text-center">
-                        <button class="text-xs bg-slate-800 text-white px-2 py-1 rounded">% Set</button>
-                    </form>
-                </td>
-                <td class="p-4 text-center">
-                    <a href="/download-invoice/${s._id}" class="text-green-600 font-bold mr-3">Invoice</a>
-                    <a href="/enroll-student/${s._id}" class="text-blue-600 font-bold mr-3">Enroll</a>
-                    <a href="/delete-student/${s._id}" class="text-red-400">Delete</a>
-                </td>
-            </tr>
-        `).join('');
-        res.send(`
-            <head><script src="https://cdn.tailwindcss.com"></script></head>
-            <body class="bg-slate-100 p-8 font-sans">
-                <div class="max-w-4xl mx-auto bg-white rounded-3xl shadow-sm overflow-hidden">
-                    <div class="bg-blue-600 p-8 text-white flex justify-between">
-                        <h1 class="text-2xl font-black">Admin Panel</h1>
-                        <a href="/add-sample-course" class="bg-white text-blue-600 px-4 py-2 rounded-xl text-xs font-bold">Add Course</a>
+                <footer class="bg-slate-900 text-white pt-20 pb-10">
+                    <div class="max-w-7xl mx-auto px-6">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-12 mb-16">
+                            <div class="col-span-2 md:col-span-1">
+                                <a href="/" class="text-2xl font-black tracking-tighter text-white mb-6 block">EDUCA.</a>
+                                <p class="text-slate-400 text-sm leading-relaxed">Empowering the next generation of engineers through project-based learning and expert mentorship.</p>
+                            </div>
+                            <div>
+                                <h4 class="font-bold mb-6 text-sm uppercase tracking-widest">Platform</h4>
+                                <ul class="text-slate-400 space-y-4 text-sm font-medium">
+                                    <li><a href="#" class="hover:text-white transition">Browse Courses</a></li>
+                                    <li><a href="/dashboard" class="hover:text-white transition">Admin Panel</a></li>
+                                    <li><a href="/register" class="hover:text-white transition">Registration</a></li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-bold mb-6 text-sm uppercase tracking-widest">Support</h4>
+                                <ul class="text-slate-400 space-y-4 text-sm font-medium">
+                                    <li><a href="#" class="hover:text-white transition">Help Center</a></li>
+                                    <li><a href="#" class="hover:text-white transition">Privacy Policy</a></li>
+                                    <li><a href="#" class="hover:text-white transition">Terms of Service</a></li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-bold mb-6 text-sm uppercase tracking-widest">Connect</h4>
+                                <div class="flex gap-4">
+                                    <div class="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center hover:bg-blue-600 transition cursor-pointer">In</div>
+                                    <div class="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center hover:bg-blue-400 transition cursor-pointer">Tw</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="border-t border-slate-800 pt-10 text-center text-slate-500 text-xs">
+                            <p>© 2026 Educa LMS. Built for Professional Growth.</p>
+                        </div>
                     </div>
-                    <table class="w-full"><tbody>${rows}</tbody></table>
-                </div>
+                </footer>
+
             </body>
+            </html>
         `);
-    } catch (e) { res.redirect('/'); }
+    } catch (err) { res.status(500).send("Home Error: " + err.message); }
 });
 
-app.post('/update-progress/:id', async (req, res) => {
-    await User.findByIdAndUpdate(req.params.id, { courseProgress: req.body.progress });
-    res.redirect('/dashboard');
-});
-
-app.post('/student-login', async (req, res) => {
-    const student = await User.findOne({ email: req.body.email }).populate('enrolledCourses');
-    let courses = student.enrolledCourses.map(c => `
-        <div class="bg-white p-6 rounded-2xl mb-4">
-            <h3 class="font-black text-slate-800">${c.title}</h3>
-            <div class="w-full bg-slate-100 h-2 rounded-full my-2"><div style="width:${student.courseProgress}%" class="bg-blue-500 h-full rounded-full"></div></div>
-            <a href="/view-certificate/${student.fullName}/${c.title}" class="text-xs font-bold text-blue-600">Certificate</a>
-        </div>
-    `).join('');
-    res.send(`<head><script src="https://cdn.tailwindcss.com"></script></head><body class="bg-slate-50 p-6"><div class="max-w-md mx-auto">${courses}</div></body>`);
-});
-
-app.post('/register-student', async (req, res) => {
-    await new User(req.body).save();
-    res.send("Success! <a href='/'>Login</a>");
-});
-
-app.get('/add-sample-course', async (req, res) => {
-    await new Course({ title: "Cloud Engineering", instructor: "Stephen", price: 450, description: "Master the Cloud" }).save();
-    res.redirect('/dashboard');
-});
-
-app.get('/enroll-student/:id', async (req, res) => {
-    const course = await Course.findOne();
-    await User.findByIdAndUpdate(req.params.id, { $addToSet: { enrolledCourses: course._id } });
-    res.redirect('/dashboard');
-});
-
-app.get('/delete-student/:id', async (req, res) => {
-    await User.findByIdAndDelete(req.params.id);
-    res.redirect('/dashboard');
-});
-
-app.get('/login-demo', (req, res) => {
-    const token = jwt.sign({ user: "Admin" }, process.env.JWT_SECRET || 'super-secret-key');
-    res.cookie('token', token).redirect('/dashboard');
-});
-
-app.get('/view-certificate/:name/:course', (req, res) => {
-    res.send(`<body style="display:flex;align-items:center;justify-content:center;height:100vh;background:#f8fafc;font-family:serif;"><div style="width:700px;border:15px solid #1e293b;padding:50px;text-align:center;background:white;"><h1>Certificate</h1><h2>${req.params.name}</h2><h3>${req.params.course}</h3></div></body>`);
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 System Online` ));
+// ... (Keep the rest of your routes from V8)
