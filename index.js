@@ -8,7 +8,7 @@ const User = require('./User');
 
 const app = express();
 
-// MIDDLEWARE - Order is critical for reading form data
+// MIDDLEWARE
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
@@ -102,13 +102,78 @@ app.get('/login-demo', (req, res) => {
     res.send("<h1>🔐 Logged In</h1><p>You now have a secure token.</p><a href='/dashboard'>Go to Dashboard</a>");
 });
 
-app.get('/dashboard', (req, res) => {
+// ADMIN DASHBOARD WITH STUDENT TABLE
+app.get('/dashboard', async (req, res) => {
     const token = req.cookies.token;
     if (!token) return res.status(401).send("<h1>🚫 Access Denied</h1><a href='/login-demo'>Login First</a>");
     try {
         jwt.verify(token, process.env.JWT_SECRET || 'super-secret-key');
-        res.send("<h1>🛠️ Admin Dashboard</h1><p>Welcome, Admin.</p><a href='/'>Back Home</a>");
-    } catch (err) { res.status(403).send("Invalid Token."); }
+        
+        // Fetch students from DB
+        const students = await User.find({});
+        
+        // Generate table rows
+        let studentRows = students.map(s => `
+            <tr class="border-b hover:bg-gray-50">
+                <td class="p-3 text-gray-700 font-medium">${s.fullName}</td>
+                <td class="p-3 text-gray-700">${s.email}</td>
+                <td class="p-3 text-center">
+                    <a href="/delete-student/${s._id}" 
+                       onclick="return confirm('Delete this student?')" 
+                       class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm font-bold hover:bg-red-200">
+                       Delete
+                    </a>
+                </td>
+            </tr>
+        `).join('');
+
+        res.send(`
+            <!DOCTYPE html>
+            <html>
+            <head><script src="https://cdn.tailwindcss.com"></script></head>
+            <body class="bg-gray-50 p-10 font-sans">
+                <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+                    <div class="bg-blue-600 p-8 text-white flex justify-between items-center">
+                        <div>
+                            <h1 class="text-3xl font-bold">Admin Dashboard</h1>
+                            <p class="text-blue-100 opacity-90">Manage your student directory</p>
+                        </div>
+                        <a href="/" class="bg-blue-500 hover:bg-blue-400 text-white px-5 py-2 rounded-lg transition">Home</a>
+                    </div>
+                    <div class="p-8">
+                        <table class="w-full text-left">
+                            <thead class="text-gray-400 border-b">
+                                <tr>
+                                    <th class="p-3 uppercase text-xs tracking-wider">Student Name</th>
+                                    <th class="p-3 uppercase text-xs tracking-wider">Email</th>
+                                    <th class="p-3 uppercase text-xs tracking-wider text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${studentRows || '<tr><td colspan="3" class="p-10 text-center text-gray-400">No students found.</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `);
+    } catch (err) { 
+        res.status(403).send("Invalid Token."); 
+    }
+});
+
+// DELETE STUDENT LOGIC
+app.get('/delete-student/:id', async (req, res) => {
+    const token = req.cookies.token;
+    if (!token) return res.status(401).send("Unauthorized");
+    try {
+        jwt.verify(token, process.env.JWT_SECRET || 'super-secret-key');
+        await User.findByIdAndDelete(req.params.id);
+        res.redirect('/dashboard');
+    } catch (err) {
+        res.status(500).send("Error deleting student: " + err.message);
+    }
 });
 
 // 6. SERVER START
@@ -116,30 +181,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 Server is active on port ${PORT}`);
 });
-// 7. DELETE STUDENT ROUTE (Admin Only)
-app.get('/delete-student/:id', async (req, res) => {
-    const token = req.cookies.token;
-    if (!token) return res.status(401).send("Unauthorized");
-
-    try {
-        jwt.verify(token, process.env.JWT_SECRET || 'super-secret-key');
-        await User.findByIdAndDelete(req.params.id);
-        res.redirect('/dashboard'); // Refresh the dashboard after deleting
-    } catch (err) {
-        res.status(500).send("Error deleting student: " + err.message);
-    }
-});
-// Updated Table Row with a Delete Link
-        let studentRows = students.map(s => `
-            <tr class="border-b hover:bg-gray-50">
-                <td class="p-3 text-gray-700">${s.fullName}</td>
-                <td class="p-3 text-gray-700">${s.email}</td>
-                <td class="p-3">
-                    <a href="/delete-student/${s._id}" 
-                       onclick="return confirm('Are you sure?')" 
-                       class="text-red-500 hover:text-red-700 font-medium">
-                       Delete
-                    </a>
-                </td>
-            </tr>
-        `).join('');
