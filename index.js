@@ -62,6 +62,16 @@ app.get('/register', (req, res) => {
                 <input type="email" name="email" placeholder="Email Address" class="w-full p-2 mb-4 border rounded" required>
                 <input type="password" name="password" placeholder="Create Password" class="w-full p-2 mb-6 border rounded" required>
                 <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Register Now</button>
+                // ADD THIS inside the home page UI div, below the existing buttons
+<div class="mt-10 pt-6 border-t border-gray-100">
+    <h3 class="text-sm font-bold text-gray-400 uppercase mb-4">Student Portal</h3>
+    <form action="/student-login" method="POST" class="flex gap-2">
+        <input type="email" name="email" placeholder="Enter your email" class="flex-1 p-2 border rounded-lg text-sm" required>
+        <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-black transition">
+            Login
+        </button>
+    </form>
+</div>
             </form>
         </body>
         </html>
@@ -214,6 +224,36 @@ app.get('/enroll-student/:id', async (req, res) => {
 
 // 6. SERVER START
 const PORT = process.env.PORT || 3000;
+// 10. STUDENT LOGIN ROUTE (For Peter to see his courses)
+app.post('/student-login', async (req, res) => {
+    try {
+        const { email } = req.body;
+        // Find user by email
+        const student = await User.findOne({ email }).populate('enrolledCourses');
+
+        if (!student) {
+            return res.send("<h1>❌ Login Failed</h1><p>Email not found.</p><a href='/'>Try again</a>");
+        }
+
+        // Generate a Student Token (Peter's ID is stored in the token)
+        const token = jwt.sign({ id: student._id }, process.env.JWT_SECRET || 'super-secret-key');
+        res.cookie('studentToken', token, { httpOnly: true });
+
+        // Show Peter his private course list
+        let myCourses = student.enrolledCourses.map(c => `<li>✅ ${c.title}</li>`).join('');
+        
+        res.send(`
+            <body style="font-family: sans-serif; padding: 40px;">
+                <h1>👋 Welcome, ${student.fullName}</h1>
+                <h3>Your Enrolled Courses:</h3>
+                <ul>${myCourses || '<li>You are not enrolled in any courses yet.</li>'}</ul>
+                <a href="/">Log Out</a>
+            </body>
+        `);
+    } catch (err) {
+        res.status(500).send("Login Error: " + err.message);
+    }
+});
 app.listen(PORT, () => {
     console.log(`🚀 Server is active on port ${PORT}`);
 });
