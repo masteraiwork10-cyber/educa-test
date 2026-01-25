@@ -249,3 +249,14 @@ app.get('/view-certificate/:name/:course', (req, res) => {
 // SERVER START
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => { console.log(`🚀 Server active on port ${PORT}`); });
+// 12. 404 NOT FOUND - PLACE AT THE VERY BOTTOM
+app.use((req, res) => {
+    res.status(404).send(`
+        <body style="font-family: sans-serif; text-align: center; padding: 100px; background: #f8fafc;">
+            <h1 style="font-size: 80px; color: #cbd5e1; margin: 0;">404</h1>
+            <h2 style="color: #475569;">Oops! This page doesn't exist.</h2>
+            <p style="color: #94a3b8;">The student or course you are looking for has moved.</p>
+            <a href="/" style="color: #2563eb; font-weight: bold; text-decoration: none;">Go back to Home</a>
+        </body>
+    `);
+});
