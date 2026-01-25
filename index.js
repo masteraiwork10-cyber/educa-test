@@ -240,12 +240,19 @@ app.post('/student-login', async (req, res) => {
             return res.send("<h1>❌ Email not found</h1><p>Please register first.</p><a href='/'>Back</a>");
         }
 
-        // Create a simple Private Student View
-        let myCourses = student.enrolledCourses.map(c => `
-            <li class="bg-blue-50 p-3 mb-2 rounded border border-blue-100 text-blue-800 font-medium">
-                📚 ${c.title}
-            </li>
-        `).join('');
+        // REPLACE the myCourses map block inside app.post('/student-login')
+let myCourses = student.enrolledCourses.map(c => `
+    <li class="bg-blue-50 p-4 mb-3 rounded-xl border border-blue-100 flex justify-between items-center">
+        <div>
+            <span class="block text-xs text-blue-400 uppercase font-bold">Course</span>
+            <span class="text-blue-900 font-bold">📚 ${c.title}</span>
+        </div>
+        <a href="/view-certificate/${student.fullName}/${c.title}" 
+           class="bg-white text-blue-600 border border-blue-600 px-3 py-1 rounded-lg text-xs font-bold hover:bg-blue-600 hover:text-white transition">
+           View Certificate
+        </a>
+    </li>
+`).join('');
 
         res.send(`
             <div style="font-family: sans-serif; max-width: 500px; margin: 50px auto; padding: 30px; border: 1px solid #eee; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
@@ -266,4 +273,25 @@ app.post('/student-login', async (req, res) => {
 });
 app.listen(PORT, () => {
     console.log(`🚀 Server is active on port ${PORT}`);
+});
+// 11. VIEW CERTIFICATE ROUTE
+app.get('/view-certificate/:name/:course', (req, res) => {
+    const { name, course } = req.params;
+    res.send(`
+        <body style="background: #f0f4f8; display: flex; align-items: center; justify-center; height: 100vh; font-family: serif;">
+            <div style="width: 800px; height: 500px; background: white; border: 20px solid #2c3e50; padding: 50px; text-align: center; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.1); margin: auto;">
+                <h1 style="font-size: 50px; color: #2c3e50; margin-bottom: 0;">Certificate of Achievement</h1>
+                <p style="font-size: 20px; color: #7f8c8d;">This is to certify that</p>
+                <h2 style="font-size: 40px; color: #e67e22; margin: 20px 0;">${name}</h2>
+                <p style="font-size: 20px; color: #7f8c8d;">has successfully completed the course</p>
+                <h3 style="font-size: 30px; color: #2c3e50;">${course}</h3>
+                <div style="margin-top: 50px; border-top: 2px solid #bdc3c7; display: inline-block; width: 200px;">
+                    <p>Program Director</p>
+                </div>
+                <div style="position: absolute; bottom: 30px; left: 30px; font-size: 12px; color: #bdc3c7;">
+                    Educa LMS Verified Digital Record
+                </div>
+            </div>
+        </body>
+    `);
 });
