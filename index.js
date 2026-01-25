@@ -116,3 +116,30 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 Server is active on port ${PORT}`);
 });
+// 7. DELETE STUDENT ROUTE (Admin Only)
+app.get('/delete-student/:id', async (req, res) => {
+    const token = req.cookies.token;
+    if (!token) return res.status(401).send("Unauthorized");
+
+    try {
+        jwt.verify(token, process.env.JWT_SECRET || 'super-secret-key');
+        await User.findByIdAndDelete(req.params.id);
+        res.redirect('/dashboard'); // Refresh the dashboard after deleting
+    } catch (err) {
+        res.status(500).send("Error deleting student: " + err.message);
+    }
+});
+// Updated Table Row with a Delete Link
+        let studentRows = students.map(s => `
+            <tr class="border-b hover:bg-gray-50">
+                <td class="p-3 text-gray-700">${s.fullName}</td>
+                <td class="p-3 text-gray-700">${s.email}</td>
+                <td class="p-3">
+                    <a href="/delete-student/${s._id}" 
+                       onclick="return confirm('Are you sure?')" 
+                       class="text-red-500 hover:text-red-700 font-medium">
+                       Delete
+                    </a>
+                </td>
+            </tr>
+        `).join('');
