@@ -60,7 +60,7 @@ app.get('/', (req, res) => {
     `);
 });
 
-// 3. STUDENT REGISTRATION ROUTES (Cleaned up)
+// 3. STUDENT REGISTRATION ROUTES
 app.get('/register', (req, res) => {
     res.send(`
         <!DOCTYPE html>
@@ -116,8 +116,7 @@ app.get('/login-demo', (req, res) => {
     res.send("<h1>🔐 Logged In</h1><p>You now have a secure token.</p><a href='/dashboard'>Go to Dashboard</a>");
 });
 
-// ADMIN DASHBOARD WITH STUDENT TABLE
-// REPLACE the beginning of your app.get('/dashboard') route
+// ADMIN DASHBOARD WITH SEARCH & POPULATE
 app.get('/dashboard', async (req, res) => {
     const token = req.cookies.token;
     if (!token) return res.status(401).send("<h1>🚫 Access Denied</h1><a href='/login-demo'>Login First</a>");
@@ -125,29 +124,19 @@ app.get('/dashboard', async (req, res) => {
     try {
         jwt.verify(token, process.env.JWT_SECRET || 'super-secret-key');
 
-        // 1. Get the search term from the URL (if any)
         const searchQuery = req.query.search || "";
-        
-        // 2. Fetch students based on search
+        const totalStudents = await User.countDocuments();
+
+        // Search logic: searches by name or email
         const students = await User.find({
             $or: [
                 { fullName: { $regex: searchQuery, $options: 'i' } },
                 { email: { $regex: searchQuery, $options: 'i' } }
             ]
         }).populate('enrolledCourses');
-
-        const totalStudents = await User.countDocuments();
         
-        // Fetch students from DB
-        // This 'populates' the enrolledCourses field with the actual Course data
-        const students = await User.find({}).populate('enrolledCourses');
-        
-        // Generate table rows
-        // REPLACE THIS BLOCK inside app.get('/dashboard')
         let studentRows = students.map(s => {
-            // Get the names of all courses the student is in
             const courseNames = s.enrolledCourses.map(c => c.title).join(', ') || 'No Courses';
-
             return `
                 <tr class="border-b hover:bg-gray-50">
                     <td class="p-3 text-gray-700 font-medium">${s.fullName}</td>
@@ -156,15 +145,8 @@ app.get('/dashboard', async (req, res) => {
                         ${s.email}
                     </td>
                     <td class="p-3 text-center space-x-2">
-                        <a href="/enroll-student/${s._id}" 
-                           class="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-bold hover:bg-blue-200">
-                           Enroll
-                        </a>
-                        <a href="/delete-student/${s._id}" 
-                           onclick="return confirm('Delete this student?')" 
-                           class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm font-bold hover:bg-red-200">
-                           Delete
-                        </a>
+                        <a href="/enroll-student/${s._id}" class="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-bold hover:bg-blue-200">Enroll</a>
+                        <a href="/delete-student/${s._id}" onclick="return confirm('Delete?')" class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm font-bold hover:bg-red-200">Delete</a>
                     </td>
                 </tr>
             `;
@@ -174,43 +156,32 @@ app.get('/dashboard', async (req, res) => {
             <!DOCTYPE html>
             <html>
             <head><script src="https://cdn.tailwindcss.com"></script></head>
-            <body class="bg-gray-50 p-10 font-sans">
+            <body class="bg-gray-50 p-10">
                 <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-                    // REPLACE the Header div in your dashboard res.send
-<div class="bg-blue-600 p-8 text-white flex justify-between items-center">
-    <div>
-        <h1 class="text-3xl font-bold">Admin Dashboard</h1>
-        <p class="text-blue-100 opacity-90">Total Registered: ${totalStudents}</p>
-    </div>
-    <form action="/dashboard" method="GET" class="flex gap-2">
-        <input type="text" name="search" placeholder="Search students..." 
-               class="p-2 rounded-lg text-gray-800 text-sm outline-none" value="${searchQuery}">
-        <button type="submit" class="bg-blue-800 px-4 py-2 rounded-lg text-sm font-bold">Search</button>
-    </form>
-</div>
-                        <a href="/" class="bg-blue-500 hover:bg-blue-400 text-white px-5 py-2 rounded-lg transition">Home</a>
+                    <div class="bg-blue-600 p-8 text-white flex justify-between items-center">
+                        <div>
+                            <h1 class="text-3xl font-bold">Admin Dashboard</h1>
+                            <p class="text-blue-100 opacity-90">Total Students: ${totalStudents}</p>
+                        </div>
+                        <form action="/dashboard" method="GET" class="flex gap-2">
+                            <input type="text" name="search" placeholder="Search..." class="p-2 rounded-lg text-gray-800 text-sm outline-none" value="${searchQuery}">
+                            <button type="submit" class="bg-blue-800 px-4 py-2 rounded-lg text-sm font-bold">Search</button>
+                        </form>
                     </div>
                     <div class="p-8">
                         <table class="w-full text-left">
                             <thead class="text-gray-400 border-b">
-                                <tr>
-                                    <th class="p-3 uppercase text-xs tracking-wider">Student Name</th>
-                                    <th class="p-3 uppercase text-xs tracking-wider">Email</th>
-                                    <th class="p-3 uppercase text-xs tracking-wider text-center">Actions</th>
-                                </tr>
+                                <tr><th>Name</th><th>Email/Course</th><th class="text-center">Actions</th></tr>
                             </thead>
-                            <tbody>
-                                ${studentRows || '<tr><td colspan="3" class="p-10 text-center text-gray-400">No students found.</td></tr>'}
-                            </tbody>
+                            <tbody>${studentRows || '<tr><td colspan="3" class="p-10 text-center">No results found.</td></tr>'}</tbody>
                         </table>
+                        <div class="mt-6 text-center"><a href="/" class="text-blue-600 hover:underline">Back to Home</a></div>
                     </div>
                 </div>
             </body>
             </html>
         `);
-    } catch (err) { 
-        res.status(403).send("Invalid Token."); 
-    }
+    } catch (err) { res.status(403).send("Invalid Token."); }
 });
 
 // DELETE STUDENT LOGIC
@@ -221,99 +192,60 @@ app.get('/delete-student/:id', async (req, res) => {
         jwt.verify(token, process.env.JWT_SECRET || 'super-secret-key');
         await User.findByIdAndDelete(req.params.id);
         res.redirect('/dashboard');
-    } catch (err) {
-        res.status(500).send("Error deleting student: " + err.message);
-    }
+    } catch (err) { res.status(500).send("Error deleting: " + err.message); }
 });
 
-// ADD THIS AT THE BOTTOM (Before the PORT definition)
+// ENROLL STUDENT LOGIC
 app.get('/enroll-student/:id', async (req, res) => {
     try {
-        // 1. Find the course we want to link to
         const sampleCourse = await Course.findOne({ title: "Cloud Engineering with Node.js" });
-        
-        if (!sampleCourse) {
-            return res.send("Course not found. Go to the Home Page and click 'Add Sample Course' first!");
-        }
-
-        // 2. Add the Course ID to the Student's data
-        // $addToSet prevents adding the same course twice
-        await User.findByIdAndUpdate(req.params.id, { 
-            $addToSet: { enrolledCourses: sampleCourse._id } 
-        });
-
-        res.send(`<h1>🎓 Enrollment Success</h1><p>Added to ${sampleCourse.title}</p><a href="/dashboard">Back</a>`);
-    } catch (err) {
-        res.status(500).send("Enrollment Error: " + err.message);
-    }
+        if (!sampleCourse) return res.send("Course not found. Add it on the Home page first!");
+        await User.findByIdAndUpdate(req.params.id, { $addToSet: { enrolledCourses: sampleCourse._id } });
+        res.redirect('/dashboard');
+    } catch (err) { res.status(500).send("Enrollment Error: " + err.message); }
 });
 
-// 6. SERVER START
-const PORT = process.env.PORT || 3000;
-// 10. STUDENT LOGIN ROUTE (For Peter to see his courses)
-// ADD/CHECK THIS at the bottom of index.js
+// STUDENT LOGIN ROUTE
 app.post('/student-login', async (req, res) => {
     try {
         const { email } = req.body;
-        // Search the database for the student 
         const student = await User.findOne({ email }).populate('enrolledCourses');
+        if (!student) return res.send("<h1>❌ Email not found</h1><a href='/'>Back</a>");
 
-        if (!student) {
-            return res.send("<h1>❌ Email not found</h1><p>Please register first.</p><a href='/'>Back</a>");
-        }
-
-        // REPLACE the myCourses map block inside app.post('/student-login')
-let myCourses = student.enrolledCourses.map(c => `
-    <li class="bg-blue-50 p-4 mb-3 rounded-xl border border-blue-100 flex justify-between items-center">
-        <div>
-            <span class="block text-xs text-blue-400 uppercase font-bold">Course</span>
-            <span class="text-blue-900 font-bold">📚 ${c.title}</span>
-        </div>
-        <a href="/view-certificate/${student.fullName}/${c.title}" 
-           class="bg-white text-blue-600 border border-blue-600 px-3 py-1 rounded-lg text-xs font-bold hover:bg-blue-600 hover:text-white transition">
-           View Certificate
-        </a>
-    </li>
-`).join('');
+        let myCourses = student.enrolledCourses.map(c => `
+            <li class="bg-blue-50 p-4 mb-3 rounded-xl border border-blue-100 flex justify-between items-center">
+                <div><span class="block text-xs text-blue-400 uppercase font-bold">Course</span><span class="text-blue-900 font-bold">📚 ${c.title}</span></div>
+                <a href="/view-certificate/${student.fullName}/${c.title}" class="bg-white text-blue-600 border border-blue-600 px-3 py-1 rounded-lg text-xs font-bold hover:bg-blue-600 hover:text-white transition">View Certificate</a>
+            </li>
+        `).join('');
 
         res.send(`
             <div style="font-family: sans-serif; max-width: 500px; margin: 50px auto; padding: 30px; border: 1px solid #eee; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
-                <h1 style="color: #1a202c;">Welcome back, ${student.fullName}!</h1>
-                <p style="color: #718096;">You are logged in as ${student.email}</p>
-                <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+                <h1 style="color: #1a202c;">Welcome, ${student.fullName}!</h1>
                 <h3 style="color: #2d3748;">My Enrolled Courses:</h3>
-                <ul style="list-style: none; padding: 0;">
-                    ${myCourses || '<li style="color: #a0aec0;">No courses found.</li>'}
-                </ul>
-                <br>
-                <a href="/" style="display: inline-block; padding: 10px 20px; background: #ebf8ff; color: #3182ce; text-decoration: none; border-radius: 8px; font-weight: bold;">Logout</a>
+                <ul style="list-style: none; padding: 0;">${myCourses || '<li>No courses yet.</li>'}</ul>
+                <br><a href="/" style="display: inline-block; padding: 10px 20px; background: #ebf8ff; color: #3182ce; text-decoration: none; border-radius: 8px; font-weight: bold;">Logout</a>
             </div>
         `);
-    } catch (err) {
-        res.status(500).send("Login Error: " + err.message);
-    }
+    } catch (err) { res.status(500).send("Login Error: " + err.message); }
 });
-app.listen(PORT, () => {
-    console.log(`🚀 Server is active on port ${PORT}`);
-});
-// 11. VIEW CERTIFICATE ROUTE
+
+// VIEW CERTIFICATE ROUTE
 app.get('/view-certificate/:name/:course', (req, res) => {
     const { name, course } = req.params;
     res.send(`
-        <body style="background: #f0f4f8; display: flex; align-items: center; justify-center; height: 100vh; font-family: serif;">
-            <div style="width: 800px; height: 500px; background: white; border: 20px solid #2c3e50; padding: 50px; text-align: center; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.1); margin: auto;">
-                <h1 style="font-size: 50px; color: #2c3e50; margin-bottom: 0;">Certificate of Achievement</h1>
+        <body style="background: #f0f4f8; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: serif;">
+            <div style="width: 800px; height: 500px; background: white; border: 20px solid #2c3e50; padding: 50px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.1);">
+                <h1 style="font-size: 50px; color: #2c3e50;">Certificate of Achievement</h1>
                 <p style="font-size: 20px; color: #7f8c8d;">This is to certify that</p>
-                <h2 style="font-size: 40px; color: #e67e22; margin: 20px 0;">${name}</h2>
-                <p style="font-size: 20px; color: #7f8c8d;">has successfully completed the course</p>
+                <h2 style="font-size: 40px; color: #e67e22;">${name}</h2>
+                <p style="font-size: 20px; color: #7f8c8d;">has completed</p>
                 <h3 style="font-size: 30px; color: #2c3e50;">${course}</h3>
-                <div style="margin-top: 50px; border-top: 2px solid #bdc3c7; display: inline-block; width: 200px;">
-                    <p>Program Director</p>
-                </div>
-                <div style="position: absolute; bottom: 30px; left: 30px; font-size: 12px; color: #bdc3c7;">
-                    Educa LMS Verified Digital Record
-                </div>
             </div>
         </body>
     `);
 });
+
+// SERVER START
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => { console.log(`🚀 Server active on port ${PORT}`); });
