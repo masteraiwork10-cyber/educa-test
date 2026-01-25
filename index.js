@@ -113,11 +113,16 @@ app.get('/dashboard', async (req, res) => {
         const students = await User.find({});
         
         // Generate table rows
+        // REPLACE THIS BLOCK inside app.get('/dashboard')
         let studentRows = students.map(s => `
             <tr class="border-b hover:bg-gray-50">
                 <td class="p-3 text-gray-700 font-medium">${s.fullName}</td>
                 <td class="p-3 text-gray-700">${s.email}</td>
-                <td class="p-3 text-center">
+                <td class="p-3 text-center space-x-2">
+                    <a href="/enroll-student/${s._id}" 
+                       class="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-bold hover:bg-blue-200">
+                       Enroll
+                    </a>
                     <a href="/delete-student/${s._id}" 
                        onclick="return confirm('Delete this student?')" 
                        class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm font-bold hover:bg-red-200">
@@ -173,6 +178,28 @@ app.get('/delete-student/:id', async (req, res) => {
         res.redirect('/dashboard');
     } catch (err) {
         res.status(500).send("Error deleting student: " + err.message);
+    }
+});
+
+// ADD THIS AT THE BOTTOM (Before the PORT definition)
+app.get('/enroll-student/:id', async (req, res) => {
+    try {
+        // 1. Find the course we want to link to
+        const sampleCourse = await Course.findOne({ title: "Cloud Engineering with Node.js" });
+        
+        if (!sampleCourse) {
+            return res.send("Course not found. Go to the Home Page and click 'Add Sample Course' first!");
+        }
+
+        // 2. Add the Course ID to the Student's data
+        // $addToSet prevents adding the same course twice
+        await User.findByIdAndUpdate(req.params.id, { 
+            $addToSet: { enrolledCourses: sampleCourse._id } 
+        });
+
+        res.send(`<h1>🎓 Enrollment Success</h1><p>Added to ${sampleCourse.title}</p><a href="/dashboard">Back</a>`);
+    } catch (err) {
+        res.status(500).send("Enrollment Error: " + err.message);
     }
 });
 
