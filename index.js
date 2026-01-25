@@ -63,12 +63,15 @@ app.get('/register', (req, res) => {
                 <input type="password" name="password" placeholder="Create Password" class="w-full p-2 mb-6 border rounded" required>
                 <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Register Now</button>
                 // ADD THIS inside the home page UI div, below the existing buttons
+// REPLACE the Student Portal section in your Home Page UI
 <div class="mt-10 pt-6 border-t border-gray-100">
-    <h3 class="text-sm font-bold text-gray-400 uppercase mb-4">Student Portal</h3>
-    <form action="/student-login" method="POST" class="flex gap-2">
-        <input type="email" name="email" placeholder="Enter your email" class="flex-1 p-2 border rounded-lg text-sm" required>
-        <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-black transition">
-            Login
+    <h3 class="text-sm font-bold text-gray-400 uppercase mb-4 text-center">Student Portal</h3>
+    <form action="/student-login" method="POST" class="flex flex-col gap-2">
+        <input type="email" name="email" placeholder="Your Registered Email" 
+               class="p-3 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" required>
+        <button type="submit" 
+                class="bg-gray-800 text-white px-4 py-3 rounded-lg text-sm font-bold hover:bg-black transition">
+            Login to My Courses
         </button>
     </form>
 </div>
