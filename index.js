@@ -117,11 +117,26 @@ app.get('/login-demo', (req, res) => {
 });
 
 // ADMIN DASHBOARD WITH STUDENT TABLE
+// REPLACE the beginning of your app.get('/dashboard') route
 app.get('/dashboard', async (req, res) => {
     const token = req.cookies.token;
     if (!token) return res.status(401).send("<h1>🚫 Access Denied</h1><a href='/login-demo'>Login First</a>");
+    
     try {
         jwt.verify(token, process.env.JWT_SECRET || 'super-secret-key');
+
+        // 1. Get the search term from the URL (if any)
+        const searchQuery = req.query.search || "";
+        
+        // 2. Fetch students based on search
+        const students = await User.find({
+            $or: [
+                { fullName: { $regex: searchQuery, $options: 'i' } },
+                { email: { $regex: searchQuery, $options: 'i' } }
+            ]
+        }).populate('enrolledCourses');
+
+        const totalStudents = await User.countDocuments();
         
         // Fetch students from DB
         // This 'populates' the enrolledCourses field with the actual Course data
@@ -161,11 +176,18 @@ app.get('/dashboard', async (req, res) => {
             <head><script src="https://cdn.tailwindcss.com"></script></head>
             <body class="bg-gray-50 p-10 font-sans">
                 <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-                    <div class="bg-blue-600 p-8 text-white flex justify-between items-center">
-                        <div>
-                            <h1 class="text-3xl font-bold">Admin Dashboard</h1>
-                            <p class="text-blue-100 opacity-90">Manage your student directory</p>
-                        </div>
+                    // REPLACE the Header div in your dashboard res.send
+<div class="bg-blue-600 p-8 text-white flex justify-between items-center">
+    <div>
+        <h1 class="text-3xl font-bold">Admin Dashboard</h1>
+        <p class="text-blue-100 opacity-90">Total Registered: ${totalStudents}</p>
+    </div>
+    <form action="/dashboard" method="GET" class="flex gap-2">
+        <input type="text" name="search" placeholder="Search students..." 
+               class="p-2 rounded-lg text-gray-800 text-sm outline-none" value="${searchQuery}">
+        <button type="submit" class="bg-blue-800 px-4 py-2 rounded-lg text-sm font-bold">Search</button>
+    </form>
+</div>
                         <a href="/" class="bg-blue-500 hover:bg-blue-400 text-white px-5 py-2 rounded-lg transition">Home</a>
                     </div>
                     <div class="p-8">
