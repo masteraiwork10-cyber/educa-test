@@ -5,6 +5,25 @@ const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const Course = require('./Course');
 const User = require('./User');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Create an 'uploads' folder if it doesn't exist
+const uploadDir = './uploads';
+if (!fs.existsSync(uploadDir)){
+    fs.mkdirSync(uploadDir);
+}
+
+// Configure where to save files
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, 'uploads/'),
+  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
+});
+const upload = multer({ storage: storage });
+
+// Tell Express to make the 'uploads' folder public
+app.use('/uploads', express.static('uploads'));
 
 const app = express();
 
@@ -167,7 +186,14 @@ app.get('/dashboard', async (req, res) => {
                             <input type="text" name="search" placeholder="Search..." class="p-2 rounded-lg text-gray-800 text-sm outline-none" value="${searchQuery}">
                             <button type="submit" class="bg-blue-800 px-4 py-2 rounded-lg text-sm font-bold">Search</button>
                         </form>
-                    </div>
+                    <div class="mt-4 p-4 bg-blue-700 rounded-lg">
+    <p class="text-xs font-bold mb-2 uppercase">Upload Course Syllabus (PDF)</p>
+    <form action="/upload-syllabus" method="POST" enctype="multipart/form-data" class="flex gap-2">
+        <input type="file" name="syllabus" accept=".pdf" class="text-xs text-white" required>
+        <button type="submit" class="bg-white text-blue-600 px-3 py-1 rounded text-xs font-bold hover:bg-gray-100">Upload</button>
+    </form>
+</div>
+                        </div>
                     <div class="p-8">
                         <table class="w-full text-left">
                             <thead class="text-gray-400 border-b">
@@ -218,6 +244,10 @@ app.post('/student-login', async (req, res) => {
                 <a href="/view-certificate/${student.fullName}/${c.title}" class="bg-white text-blue-600 border border-blue-600 px-3 py-1 rounded-lg text-xs font-bold hover:bg-blue-600 hover:text-white transition">View Certificate</a>
             </li>
         `).join('');
+        // Add this button inside the <li> of your student-login myCourses map
+<a href="/uploads/syllabus-filename-here" download class="text-xs text-green-600 font-bold underline">
+   Download Syllabus
+</a>
 
         res.send(`
             <div style="font-family: sans-serif; max-width: 500px; margin: 50px auto; padding: 30px; border: 1px solid #eee; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
@@ -248,6 +278,24 @@ app.get('/view-certificate/:name/:course', (req, res) => {
 
 // SERVER START
 const PORT = process.env.PORT || 3000;
+// 13. UPLOAD SYLLABUS ROUTE
+app.post('/upload-syllabus', upload.single('syllabus'), async (req, res) => {
+    try {
+        if (!req.file) return res.send("Please select a file.");
+
+        // For this demo, we will attach the file path to the "Cloud Engineering" course
+        const fileUrl = `/uploads/` + req.file.filename;
+        
+        await Course.findOneAndUpdate(
+            { title: "Cloud Engineering with Node.js" },
+            { description: "Syllabus Available! Download below.", price: 450, syllabusUrl: fileUrl } // We add a temporary field
+        );
+
+        res.send(`<h1>✅ Upload Success</h1><p>Syllabus is now live.</p><a href="/dashboard">Back</a>`);
+    } catch (err) {
+        res.status(500).send("Upload Error: " + err.message);
+    }
+});
 app.listen(PORT, () => { console.log(`🚀 Server active on port ${PORT}`); });
 // 12. 404 NOT FOUND - PLACE AT THE VERY BOTTOM
 app.use((req, res) => {
