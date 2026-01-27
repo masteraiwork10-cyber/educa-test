@@ -30,14 +30,30 @@ mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('✅ Connected to MongoDB'))
     .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
-// 1. HOME PAGE (Hero Image & Navbar Fixed)
+// 1. HOME PAGE (Enhanced with dynamic tags and premium layout)
 app.get('/', async (req, res) => {
     try {
         const courses = await Course.find();
-        const courseCards = courses.map(c => `
-            <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 flex flex-col">
-                <div class="h-48 bg-gradient-to-br from-indigo-600 to-purple-700 flex items-center justify-center text-white/10 text-8xl font-black italic select-none">${c.title[0]}</div>
+        
+        // Dynamic Tag Color Helper
+        const getTagStyles = (tag) => {
+            if (tag === 'Security') return 'bg-rose-50 text-rose-600 border-rose-100';
+            if (tag === 'Frontend') return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+            return 'bg-indigo-50 text-indigo-600 border-indigo-100';
+        };
+
+        const courseCards = courses.map(c => {
+            const tag = c.tag || 'Backend';
+            const styles = getTagStyles(tag);
+            
+            return `
+            <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 flex flex-col group">
+                <div class="h-48 bg-slate-900 flex items-center justify-center text-white/10 text-8xl font-black italic select-none group-hover:text-indigo-500/20 transition-colors">${c.title[0]}</div>
                 <div class="p-8 flex-grow">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${styles}">${tag}</span>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase">${c.level || 'Professional'}</span>
+                    </div>
                     <h3 class="text-2xl font-black text-slate-800 leading-tight mb-2">${c.title}</h3>
                     <p class="text-[10px] text-indigo-500 font-black uppercase tracking-[0.2em] mb-4">Instructor: ${c.instructor}</p>
                     <p class="text-sm text-slate-500 leading-relaxed line-clamp-3 mb-8">${c.description}</p>
@@ -46,7 +62,8 @@ app.get('/', async (req, res) => {
                         <a href="/register" class="bg-indigo-600 text-white text-xs font-black px-8 py-3.5 rounded-2xl uppercase tracking-widest hover:bg-black transition-all">Enroll</a>
                     </div>
                 </div>
-            </div>`).join('');
+            </div>`;
+        }).join('');
 
         res.send(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script><title>Educa Academy | Stephen</title>
         <style>@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;800&display=swap'); body { font-family: 'Plus Jakarta Sans', sans-serif; }</style></head>
@@ -83,7 +100,7 @@ app.get('/', async (req, res) => {
                         <h2 class="text-3xl font-black text-slate-900 mb-2">Available Tracks</h2>
                         <p class="text-slate-400 text-sm font-medium">Explore our premium cloud engineering syllabus.</p>
                     </div>
-                    <a href="/add-sample-course" class="bg-white text-indigo-600 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest border border-slate-200 hover:border-indigo-600 transition-all">+ Add Demo</a>
+                    <a href="/add-sample-course" class="bg-white text-indigo-600 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest border border-slate-200 hover:border-indigo-600 transition-all">+ Add All Demo Tracks</a>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-10">${courseCards}</div>
             </main>
@@ -102,7 +119,7 @@ app.get('/', async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 });
 
-// 2. ADMIN DASHBOARD (BIG BUTTONS FIXED)
+// 2. ADMIN DASHBOARD
 app.get('/dashboard', async (req, res) => {
     const token = req.cookies.token;
     if (!token) return res.send("<body style='font-family:sans-serif; padding:50px;'><h1>Access Denied</h1><a href='/login-demo'>Login as Admin</a></body>");
@@ -160,7 +177,7 @@ app.get('/dashboard', async (req, res) => {
     } catch (e) { res.redirect('/'); }
 });
 
-// STUDENT PORTAL & VIDEO ROUTES (SAME AS V15)
+// 3. STUDENT PORTAL
 app.post('/student-login', async (req, res) => {
     try {
         const student = await User.findOne({ email: req.body.email }).populate('enrolledCourses');
@@ -203,7 +220,7 @@ app.get('/view-lesson/:courseId', async (req, res) => {
     } catch (e) { res.redirect('/'); }
 });
 
-// REMAINING ROUTES (Register, Add Course, etc)
+// 4. REGISTRATION & DATA
 app.get('/register', (req, res) => {
     res.send(`<head><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script></head>
     <body class="bg-indigo-600 flex flex-col items-center justify-center min-h-screen p-6 font-sans">
@@ -222,9 +239,36 @@ app.post('/register-student', async (req, res) => {
     try { await new User(req.body).save(); res.send("<body class='p-10 font-sans'><h1>Success!</h1><a href='/' style='color:blue;'>Login here</a></body>"); } catch (e) { res.send(e.message); }
 });
 
+// UPDATED: ADDS THREE UNIQUE COURSES AT ONCE
 app.get('/add-sample-course', async (req, res) => {
     try {
-        await new Course({ title: "Cloud Engineering with Node.js", instructor: "Stephen", price: 450, description: "A premium course hosted on Render and MongoDB. High-performance architecture masterclass." }).save();
+        await Course.deleteMany({}); // Clears old duplicates
+        await Course.insertMany([
+          { 
+            title: "Cloud Engineering with Node.js", 
+            instructor: "Stephen", 
+            price: 450, 
+            tag: "Backend",
+            level: "Advanced",
+            description: "Master scalable backend architecture. A premium course covering production-ready deployment on Render and MongoDB Atlas." 
+          },
+          { 
+            title: "Full-Stack DevSecOps & Security", 
+            instructor: "Alex Rivera", 
+            price: 550, 
+            tag: "Security",
+            level: "Professional",
+            description: "Secure your MERN applications. Learn to implement JWT, OAuth2, and protect your SaaS against modern web vulnerabilities." 
+          },
+          { 
+            title: "Modern UI Design with Tailwind CSS", 
+            instructor: "Sarah Chen", 
+            price: 350, 
+            tag: "Frontend",
+            level: "Intermediate",
+            description: "The art of High-Fidelity interfaces. Build stunning, responsive, and accessible dashboards using utility-first CSS." 
+          }
+        ]);
         res.redirect('/');
     } catch (e) { res.redirect('/'); }
 });
