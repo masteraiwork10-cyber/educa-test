@@ -30,12 +30,11 @@ mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('✅ Connected to MongoDB'))
     .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
-// 1. HOME PAGE (Enhanced with dynamic colored background letters)
+// 1. HOME PAGE (Enhanced with Animated Background Letters)
 app.get('/', async (req, res) => {
     try {
         const courses = await Course.find();
         
-        // Dynamic Styling Helper for Tags and Background Letters
         const getStyles = (tag) => {
             if (tag === 'Security') return { 
                 tag: 'bg-rose-50 text-rose-600 border-rose-100', 
@@ -58,8 +57,10 @@ app.get('/', async (req, res) => {
             
             return `
             <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 flex flex-col group">
-                <div class="h-48 ${style.bgLetter} flex items-center justify-center text-8xl font-black italic select-none group-hover:scale-110 transition-transform duration-700">
-                    ${firstLetter}
+                <div class="h-48 ${style.bgLetter} flex items-center justify-center overflow-hidden relative">
+                    <span class="text-8xl font-black italic select-none transform transition-transform duration-700 group-hover:scale-125 group-hover:rotate-6">
+                        ${firstLetter}
+                    </span>
                 </div>
                 
                 <div class="p-8 flex-grow">
@@ -67,12 +68,12 @@ app.get('/', async (req, res) => {
                         <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${style.tag}">${tag}</span>
                         <span class="text-[10px] text-slate-400 font-bold uppercase">${c.level || 'Professional'}</span>
                     </div>
-                    <h3 class="text-2xl font-black text-slate-800 leading-tight mb-2">${c.title}</h3>
+                    <h3 class="text-2xl font-black text-slate-800 leading-tight mb-2 group-hover:text-indigo-600 transition-colors">${c.title}</h3>
                     <p class="text-[10px] text-indigo-500 font-black uppercase tracking-[0.2em] mb-4">Instructor: ${c.instructor}</p>
                     <p class="text-sm text-slate-500 leading-relaxed line-clamp-3 mb-8">${c.description}</p>
                     <div class="flex items-center justify-between pt-6 border-t border-slate-50 mt-auto">
                         <span class="text-2xl font-black text-slate-900">$${c.price}</span>
-                        <a href="/register" class="bg-indigo-600 text-white text-xs font-black px-8 py-3.5 rounded-2xl uppercase tracking-widest hover:bg-black transition-all">Enroll</a>
+                        <a href="/register" class="bg-indigo-600 text-white text-xs font-black px-8 py-3.5 rounded-2xl uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-indigo-100">Enroll</a>
                     </div>
                 </div>
             </div>`;
@@ -93,8 +94,8 @@ app.get('/', async (req, res) => {
             
             <header class="max-w-7xl mx-auto px-6 py-16 md:py-28 grid md:grid-cols-2 gap-16 items-center flex-grow">
                 <div>
-                    <span class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-6 inline-block">Premium Cloud Learning</span>
-                    <h1 class="text-5xl md:text-7xl font-black mb-8 leading-[1.1] tracking-tight text-slate-900">Deploy your <span class="text-indigo-600">Future</span> Today.</h1>
+                    <span class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-6 inline-block animate-bounce">Premium Cloud Learning</span>
+                    <h1 class="text-5xl md:text-7xl font-black mb-8 leading-[1.1] tracking-tight text-slate-900">Deploy your <span class="text-indigo-600 underline decoration-indigo-200">Future</span> Today.</h1>
                     <p class="text-slate-500 mb-12 text-lg max-w-md leading-relaxed">Master enterprise Cloud Engineering with Stephen. Industry-standard certifications hosted on Render.</p>
                     <form action="/student-login" method="POST" class="flex bg-white p-3 rounded-[2rem] shadow-2xl shadow-indigo-100 border border-slate-100 max-w-md">
                         <input type="email" name="email" placeholder="Enter student email" class="w-full px-6 outline-none text-sm font-medium" required>
@@ -103,17 +104,17 @@ app.get('/', async (req, res) => {
                 </div>
                 <div class="hidden md:block relative">
                     <div class="absolute -inset-4 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-[3rem] blur-2xl opacity-20 animate-pulse"></div>
-                    <img src="https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&q=80&w=800" class="relative rounded-[3rem] shadow-2xl border border-white" alt="Cloud Tech">
+                    <img src="https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&q=80&w=800" class="relative rounded-[3rem] shadow-2xl border border-white transition-transform duration-500 hover:rotate-2 hover:scale-[1.02]" alt="Cloud Tech">
                 </div>
             </header>
 
             <main class="max-w-7xl mx-auto px-6 py-20">
-                <div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-4">
+                <div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-4 border-l-4 border-indigo-600 pl-6">
                     <div>
-                        <h2 class="text-3xl font-black text-slate-900 mb-2">Available Tracks</h2>
-                        <p class="text-slate-400 text-sm font-medium">Explore our premium cloud engineering syllabus.</p>
+                        <h2 class="text-3xl font-black text-slate-900 mb-2 uppercase tracking-tighter">Available Tracks</h2>
+                        <p class="text-slate-400 text-sm font-medium">Explore our premium engineering syllabus.</p>
                     </div>
-                    <a href="/add-sample-course" class="bg-white text-indigo-600 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest border border-slate-200 hover:border-indigo-600 transition-all">+ Reset Demo Data</a>
+                    <a href="/add-sample-course" class="bg-white text-indigo-600 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest border border-slate-200 hover:border-indigo-600 hover:shadow-lg transition-all">↻ Reset Demo Content</a>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-10">${courseCards}</div>
             </main>
@@ -132,7 +133,7 @@ app.get('/', async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 });
 
-// 2. ADMIN DASHBOARD
+// [Rest of the routes remain consistent to ensure stability]
 app.get('/dashboard', async (req, res) => {
     const token = req.cookies.token;
     if (!token) return res.send("<body style='font-family:sans-serif; padding:50px;'><h1>Access Denied</h1><a href='/login-demo'>Login as Admin</a></body>");
@@ -190,13 +191,12 @@ app.get('/dashboard', async (req, res) => {
     } catch (e) { res.redirect('/'); }
 });
 
-// 3. STUDENT PORTAL
 app.post('/student-login', async (req, res) => {
     try {
         const student = await User.findOne({ email: req.body.email }).populate('enrolledCourses');
         if (!student) return res.send("<body class='p-10 font-sans'><h1>User not found.</h1><a href='/register' style='color:blue;'>Register here</a></body>");
         let content = student.enrolledCourses.map(c => `
-            <div class="bg-white p-10 rounded-[2.5rem] mb-6 shadow-xl border border-slate-50">
+            <div class="bg-white p-10 rounded-[2.5rem] mb-6 shadow-xl border border-slate-50 transition-all hover:scale-[1.01]">
                 <h3 class="font-black text-slate-800 text-2xl mb-2">${c.title}</h3>
                 <p class="text-[10px] text-indigo-500 font-black uppercase tracking-widest mb-8">Mastery Track</p>
                 <div class="w-full bg-slate-100 h-3 rounded-full my-8 overflow-hidden"><div style="width:${student.courseProgress}%" class="bg-indigo-600 h-full transition-all duration-1000 shadow-lg shadow-indigo-200"></div></div>
@@ -233,7 +233,10 @@ app.get('/view-lesson/:courseId', async (req, res) => {
     } catch (e) { res.redirect('/'); }
 });
 
-// 4. REGISTRATION & DEMO DATA
+app.post('/register-student', async (req, res) => {
+    try { await new User(req.body).save(); res.send("<body class='p-10 font-sans'><h1>Success!</h1><a href='/' style='color:blue;'>Login here</a></body>"); } catch (e) { res.send(e.message); }
+});
+
 app.get('/register', (req, res) => {
     res.send(`<head><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script></head>
     <body class="bg-indigo-600 flex flex-col items-center justify-center min-h-screen p-6 font-sans">
@@ -246,10 +249,6 @@ app.get('/register', (req, res) => {
             <input type="password" name="password" placeholder="Create Password" class="w-full p-5 mb-10 bg-slate-50 rounded-2xl border border-slate-100 outline-none focus:border-indigo-600" required>
             <button class="w-full py-5 bg-indigo-600 text-white font-black rounded-2xl uppercase text-[11px] tracking-widest shadow-xl shadow-indigo-100">Create My Account</button>
         </form></body>`);
-});
-
-app.post('/register-student', async (req, res) => {
-    try { await new User(req.body).save(); res.send("<body class='p-10 font-sans'><h1>Success!</h1><a href='/' style='color:blue;'>Login here</a></body>"); } catch (e) { res.send(e.message); }
 });
 
 app.get('/add-sample-course', async (req, res) => {
