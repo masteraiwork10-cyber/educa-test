@@ -46,7 +46,7 @@ const FOOTER = `
 <footer class="bg-white border-t border-slate-100 py-16 mt-auto">
     <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-10">
         <div class="flex items-center gap-3">
-            <img src="/assets/hero-cloud.png" class="w-8 h-8 opacity-50" alt="Cloud Icon">
+            <img src="/assets/hero-favicon.png" class="w-8 h-8 opacity-50" alt="Cloud Icon">
             <div>
                 <span class="text-2xl font-black italic text-indigo-600">EDUCA.</span>
                 <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">The Gold Standard in Cloud Education • Stephen</p>
