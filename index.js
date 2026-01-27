@@ -30,28 +30,41 @@ mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('✅ Connected to MongoDB'))
     .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
-// 1. HOME PAGE (Enhanced with dynamic tags and premium layout)
+// 1. HOME PAGE (Enhanced with dynamic colored background letters)
 app.get('/', async (req, res) => {
     try {
         const courses = await Course.find();
         
-        // Dynamic Tag Color Helper
-        const getTagStyles = (tag) => {
-            if (tag === 'Security') return 'bg-rose-50 text-rose-600 border-rose-100';
-            if (tag === 'Frontend') return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-            return 'bg-indigo-50 text-indigo-600 border-indigo-100';
+        // Dynamic Styling Helper for Tags and Background Letters
+        const getStyles = (tag) => {
+            if (tag === 'Security') return { 
+                tag: 'bg-rose-50 text-rose-600 border-rose-100', 
+                bgLetter: 'bg-rose-50 text-rose-400/30' 
+            };
+            if (tag === 'Frontend') return { 
+                tag: 'bg-emerald-50 text-emerald-600 border-emerald-100', 
+                bgLetter: 'bg-emerald-50 text-emerald-400/30' 
+            };
+            return { 
+                tag: 'bg-indigo-50 text-indigo-600 border-indigo-100', 
+                bgLetter: 'bg-indigo-50 text-indigo-400/30' 
+            };
         };
 
         const courseCards = courses.map(c => {
             const tag = c.tag || 'Backend';
-            const styles = getTagStyles(tag);
+            const style = getStyles(tag);
+            const firstLetter = c.title.charAt(0);
             
             return `
             <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 flex flex-col group">
-                <div class="h-48 bg-slate-900 flex items-center justify-center text-white/10 text-8xl font-black italic select-none group-hover:text-indigo-500/20 transition-colors">${c.title[0]}</div>
+                <div class="h-48 ${style.bgLetter} flex items-center justify-center text-8xl font-black italic select-none group-hover:scale-110 transition-transform duration-700">
+                    ${firstLetter}
+                </div>
+                
                 <div class="p-8 flex-grow">
                     <div class="flex justify-between items-center mb-4">
-                        <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${styles}">${tag}</span>
+                        <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${style.tag}">${tag}</span>
                         <span class="text-[10px] text-slate-400 font-bold uppercase">${c.level || 'Professional'}</span>
                     </div>
                     <h3 class="text-2xl font-black text-slate-800 leading-tight mb-2">${c.title}</h3>
@@ -100,7 +113,7 @@ app.get('/', async (req, res) => {
                         <h2 class="text-3xl font-black text-slate-900 mb-2">Available Tracks</h2>
                         <p class="text-slate-400 text-sm font-medium">Explore our premium cloud engineering syllabus.</p>
                     </div>
-                    <a href="/add-sample-course" class="bg-white text-indigo-600 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest border border-slate-200 hover:border-indigo-600 transition-all">+ Add All Demo Tracks</a>
+                    <a href="/add-sample-course" class="bg-white text-indigo-600 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest border border-slate-200 hover:border-indigo-600 transition-all">+ Reset Demo Data</a>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-10">${courseCards}</div>
             </main>
@@ -220,7 +233,7 @@ app.get('/view-lesson/:courseId', async (req, res) => {
     } catch (e) { res.redirect('/'); }
 });
 
-// 4. REGISTRATION & DATA
+// 4. REGISTRATION & DEMO DATA
 app.get('/register', (req, res) => {
     res.send(`<head><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script></head>
     <body class="bg-indigo-600 flex flex-col items-center justify-center min-h-screen p-6 font-sans">
@@ -239,10 +252,9 @@ app.post('/register-student', async (req, res) => {
     try { await new User(req.body).save(); res.send("<body class='p-10 font-sans'><h1>Success!</h1><a href='/' style='color:blue;'>Login here</a></body>"); } catch (e) { res.send(e.message); }
 });
 
-// UPDATED: ADDS THREE UNIQUE COURSES AT ONCE
 app.get('/add-sample-course', async (req, res) => {
     try {
-        await Course.deleteMany({}); // Clears old duplicates
+        await Course.deleteMany({}); 
         await Course.insertMany([
           { 
             title: "Cloud Engineering with Node.js", 
@@ -250,7 +262,7 @@ app.get('/add-sample-course', async (req, res) => {
             price: 450, 
             tag: "Backend",
             level: "Advanced",
-            description: "Master scalable backend architecture. A premium course covering production-ready deployment on Render and MongoDB Atlas." 
+            description: "Master scalable backend architecture. Production-ready deployment on Render and MongoDB Atlas." 
           },
           { 
             title: "Full-Stack DevSecOps & Security", 
@@ -258,7 +270,7 @@ app.get('/add-sample-course', async (req, res) => {
             price: 550, 
             tag: "Security",
             level: "Professional",
-            description: "Secure your MERN applications. Learn to implement JWT, OAuth2, and protect your SaaS against modern web vulnerabilities." 
+            description: "Secure your MERN applications. Implement JWT, OAuth2, and protect against vulnerabilities." 
           },
           { 
             title: "Modern UI Design with Tailwind CSS", 
@@ -266,7 +278,7 @@ app.get('/add-sample-course', async (req, res) => {
             price: 350, 
             tag: "Frontend",
             level: "Intermediate",
-            description: "The art of High-Fidelity interfaces. Build stunning, responsive, and accessible dashboards using utility-first CSS." 
+            description: "Build stunning, responsive interfaces using utility-first CSS and modern design systems." 
           }
         ]);
         res.redirect('/');
