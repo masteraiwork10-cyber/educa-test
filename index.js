@@ -104,7 +104,6 @@ app.get('/', async (req, res) => {
                     <a href="/login-demo" class="bg-slate-100 text-slate-600 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all">Admin Login</a>
                     <a href="/register" class="bg-indigo-600 text-white px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-lg">Join Now</a>
                     <a href="/register" class="bg-indigo-600 text-white px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-lg">Registration</a>
-                    <a href="/register" class="hover:text-indigo-600 transition-colors font-bold">Registration</a>
                 </div>
                 
             </nav>
