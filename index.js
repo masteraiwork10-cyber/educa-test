@@ -8,7 +8,7 @@ const path = require('path');
 const fs = require('fs');
 const PDFDocument = require('pdfkit');
 
-// ROOT IMPORTS
+// ROOT IMPORTS (Files are kept in the same folder as index.js)
 const Course = require('./Course');
 const User = require('./User');
 
@@ -21,8 +21,7 @@ app.use(express.json());
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 app.use('/uploads', express.static(uploadDir));
-// This serves the 'assets' folder at the '/assets' URL path
-app.use('/assets', express.static(path.join(__dirname, 'assets')));
+app.use('/assets', express.static('assets'));
 
 // Database
 mongoose.connect(process.env.MONGO_URI)
@@ -30,13 +29,12 @@ mongoose.connect(process.env.MONGO_URI)
     .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
 // --- GLOBAL UI COMPONENTS ---
-// FIX: Added cache-busting query (?v=1.1) to ensure the favicon updates immediately
+// Added Favicon Link and improved Meta tags
 const headHTML = (title) => `
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2165/2165706.png">
-    <link rel="shortcut icon" type="image/png" href="/assets/favicon.png?v=1.1">
+    <link rel="icon" type="image/png" href="/assets/favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <title>${title} | EDUCA Academy</title>
     <style>@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;800&display=swap'); body { font-family: 'Plus Jakarta Sans', sans-serif; }</style>
@@ -45,7 +43,10 @@ const headHTML = (title) => `
 const FOOTER = `
 <footer class="bg-white border-t border-slate-100 py-16 mt-auto">
     <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-10">
-                        <span class="text-2xl font-black italic text-indigo-600">EDUCA.</span>
+        <div class="flex items-center gap-3">
+            <img src="/assets/hero-cloud.png" class="w-8 h-8 opacity-50" alt="Cloud Icon">
+            <div>
+                <span class="text-2xl font-black italic text-indigo-600">EDUCA.</span>
                 <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">The Gold Standard in Cloud Education • Stephen</p>
             </div>
         </div>
@@ -94,7 +95,7 @@ app.get('/', async (req, res) => {
         <body class="bg-[#F8FAFC] flex flex-col min-h-screen">
             <nav class="bg-white/80 backdrop-blur-xl sticky top-0 z-50 border-b border-slate-100 h-20 flex items-center justify-between px-8">
                 <div class="flex items-center gap-2">
-                    <img src="/assets/favicon.png" class="w-6 h-6" alt="Cloud Logo">
+                    <img src="/assets/hero-cloud.png" class="w-6 h-6" alt="Cloud Logo">
                     <a href="/" class="text-2xl font-black italic text-indigo-600">EDUCA.</a>
                 </div>
                 <div class="flex gap-4">
@@ -127,7 +128,7 @@ app.get('/', async (req, res) => {
     } catch (err) { res.status(500).send("Critical System Error: " + err.message); }
 });
 
-// --- REMAINING ROUTES UNCHANGED ---
+// --- REST OF THE ROUTES (SAME AS PREVIOUS VERIFIED VERSION) ---
 app.get('/dashboard', async (req, res) => {
     const token = req.cookies.token;
     if (!token) return res.redirect('/login-demo');
