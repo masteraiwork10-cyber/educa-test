@@ -35,7 +35,7 @@ const headHTML = (title) => `
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2165/2165706.png">
+    <link rel="icon" type="image/png" href="/assets/favicon.png?v=1.1">
     <link rel="shortcut icon" type="image/png" href="/assets/favicon.png?v=1.1">
     <script src="https://cdn.tailwindcss.com"></script>
     <title>${title} | EDUCA Academy</title>
@@ -104,6 +104,12 @@ app.get('/', async (req, res) => {
                     <a href="/login-demo" class="bg-slate-100 text-slate-600 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all">Admin Login</a>
                     <a href="/register" class="bg-indigo-600 text-white px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-lg">Join Now</a>
                 </div>
+                <div class="flex gap-10 text-[11px] font-black uppercase tracking-widest text-slate-400">
+            <a href="/dashboard" class="hover:text-indigo-600 transition-colors font-bold">Admin Dashboard</a>
+            <a href="/register" class="hover:text-indigo-600 transition-colors font-bold">Registration</a>
+            <p class="text-slate-300">© 2026</p>
+        </div>
+    </div>
             </nav>
             <header class="max-w-7xl mx-auto px-6 py-28 grid md:grid-cols-2 gap-16 items-center">
                 <div>
