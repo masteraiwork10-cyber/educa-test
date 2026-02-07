@@ -21,7 +21,6 @@ app.use(express.json());
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 app.use('/uploads', express.static(uploadDir));
-// This serves the 'assets' folder at the '/assets' URL path
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 // Database
@@ -30,7 +29,6 @@ mongoose.connect(process.env.MONGO_URI)
     .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
 // --- GLOBAL UI COMPONENTS ---
-// FIX: Added cache-busting query (?v=1.1) to ensure the favicon updates immediately
 const headHTML = (title) => `
 <head>
     <meta charset="UTF-8">
@@ -39,7 +37,16 @@ const headHTML = (title) => `
     <link rel="shortcut icon" type="image/png" href="/assets/favicon.png?v=1.1">
     <script src="https://cdn.tailwindcss.com"></script>
     <title>${title} | EDUCA Academy</title>
-    <style>@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;800&display=swap'); body { font-family: 'Plus Jakarta Sans', sans-serif; }</style>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;800&display=swap'); 
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        /* Custom CSS to fix button overlap on very small screens */
+        @media (max-width: 480px) {
+            .nav-container { padding-left: 1rem; padding-right: 1rem; height: auto; padding-top: 1rem; padding-bottom: 1rem; flex-direction: column; gap: 1rem; }
+            .nav-auth-buttons { width: 100%; justify-content: center; flex-wrap: wrap; }
+            .nav-auth-buttons a { padding-left: 0.75rem; padding-right: 0.75rem; font-size: 9px; }
+        }
+    </style>
 </head>`;
 
 const FOOTER = `
@@ -95,22 +102,22 @@ app.get('/', async (req, res) => {
 
         res.send(`<!DOCTYPE html><html>${headHTML('Deploy Your Future')}
         <body class="bg-[#F8FAFC] flex flex-col min-h-screen">
-            <nav class="bg-white/80 backdrop-blur-xl sticky top-0 z-50 border-b border-slate-100 h-20 flex items-center justify-between px-8">
+            <nav class="nav-container bg-white/80 backdrop-blur-xl sticky top-0 z-50 border-b border-slate-100 min-h-[5rem] flex items-center justify-between px-4 md:px-8">
                 <div class="flex items-center gap-2">
                     <img src="/assets/favicon.png" class="w-6 h-6" alt="Cloud Logo">
                     <a href="/" class="text-2xl font-black italic text-indigo-600">EDUCA.</a>
                 </div>
-                <div class="flex gap-4">
-                    <a href="/login-demo" class="bg-slate-100 text-slate-600 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all">Admin Login</a>
-                    <a href="/register" class="bg-indigo-600 text-white px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-lg">Join Now</a>
-                    <a href="/register" class="bg-indigo-600 text-white px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-lg">Registration</a>
+                <div class="nav-auth-buttons flex gap-2 md:gap-4 flex-wrap">
+                    <a href="/login-demo" class="bg-slate-100 text-slate-600 px-4 md:px-6 py-2.5 md:py-3 rounded-2xl text-[10px] md:text-[11px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all">Admin Login</a>
+                    <a href="/register" class="bg-indigo-600 text-white px-4 md:px-6 py-2.5 md:py-3 rounded-2xl text-[10px] md:text-[11px] font-black uppercase tracking-widest shadow-lg">Join Now</a>
+                    <a href="/register" class="bg-indigo-600 text-white px-4 md:px-6 py-2.5 md:py-3 rounded-2xl text-[10px] md:text-[11px] font-black uppercase tracking-widest shadow-lg">Register</a>
                 </div>
-                
             </nav>
+
             <header class="max-w-7xl mx-auto px-6 py-28 grid md:grid-cols-2 gap-16 items-center">
                 <div>
                     <span class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest mb-6 inline-block animate-bounce">Premium Cloud Learning</span>
-                    <h1 class="text-7xl font-black mb-8 leading-[1.1] tracking-tight text-slate-900">Deploy your <span class="text-indigo-600 underline decoration-indigo-200">Future</span> Today.</h1>
+                    <h1 class="text-5xl md:text-7xl font-black mb-8 leading-[1.1] tracking-tight text-slate-900">Deploy your <span class="text-indigo-600 underline decoration-indigo-200">Future</span> Today.</h1>
                     <p class="text-slate-500 mb-12 text-lg max-w-md leading-relaxed">Master enterprise Cloud Engineering with Stephen. Industry-standard certifications hosted on Render.</p>
                     <form action="/student-login" method="POST" class="flex bg-white p-3 rounded-[2rem] shadow-2xl border border-slate-100 max-w-md">
                         <input type="email" name="email" placeholder="Enter student email" class="w-full px-6 outline-none text-sm font-medium" required>
@@ -119,11 +126,12 @@ app.get('/', async (req, res) => {
                 </div>
                 <div class="hidden md:block relative">
                     <div class="absolute -inset-4 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-[3rem] blur-2xl opacity-20"></div>
-                    <img src="https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&q=80&w=800" class="relative rounded-[3rem] shadow-2xl rotate-2">
+                    <img src="https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&q=80&w=800" class="relative rounded-[3rem] shadow-2xl rotate-2" alt="Hero Image">
                 </div>
             </header>
+
             <main class="max-w-7xl mx-auto px-6 py-20">
-                <div class="flex justify-between items-end mb-16 border-l-4 border-indigo-600 pl-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 border-l-4 border-indigo-600 pl-6 gap-4">
                     <div><h2 class="text-3xl font-black text-slate-900 uppercase">Available Tracks</h2></div>
                     <a href="/add-sample-course" class="bg-white text-indigo-600 px-6 py-3 rounded-2xl text-[11px] font-black uppercase border border-slate-200">↻ Reset Demo Content</a>
                 </div>
@@ -132,7 +140,7 @@ app.get('/', async (req, res) => {
     } catch (err) { res.status(500).send("Critical System Error: " + err.message); }
 });
 
-// --- REMAINING ROUTES UNCHANGED ---
+// --- ADMIN DASHBOARD ---
 app.get('/dashboard', async (req, res) => {
     const token = req.cookies.token;
     if (!token) return res.redirect('/login-demo');
@@ -148,16 +156,16 @@ app.get('/dashboard', async (req, res) => {
                         <button class="bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-indigo-600 transition-colors">Set</button>
                     </form>
                 </td>
-                <td class="p-6 text-right flex gap-2 justify-end">
+                <td class="p-6 text-right flex gap-2 justify-end flex-wrap">
                     <a href="/download-invoice/${s._id}" class="bg-emerald-500 text-white px-4 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg shadow-emerald-100">Invoice</a>
                     <a href="/enroll-student/${s._id}" class="bg-indigo-600 text-white px-4 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg shadow-indigo-100">Enroll</a>
                     <a href="/delete-student/${s._id}" class="bg-rose-500 text-white px-4 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg shadow-rose-100">Delete</a>
                 </td>
             </tr>`).join('');
         res.send(`<!DOCTYPE html><html>${headHTML('Admin Management')}
-        <body class="bg-[#F8FAFC] min-h-screen flex flex-col"><div class="p-10 flex-grow">
+        <body class="bg-[#F8FAFC] min-h-screen flex flex-col"><div class="p-4 md:p-10 flex-grow">
             <div class="max-w-6xl mx-auto bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white">
-                <div class="bg-slate-900 p-8 text-white flex justify-between items-center">
+                <div class="bg-slate-900 p-8 text-white flex flex-col md:flex-row justify-between items-center gap-4">
                     <div><h1 class="text-xl font-black italic uppercase tracking-widest">Admin Dashboard</h1><p class="text-[10px] text-slate-400 font-bold uppercase mt-1">LMS Control Center v1.0</p></div>
                     <a href="/" class="bg-white text-slate-900 px-6 py-3 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all">← Exit Admin</a>
                 </div>
@@ -172,6 +180,7 @@ app.get('/dashboard', async (req, res) => {
     } catch (e) { res.clearCookie('token').redirect('/login-demo'); }
 });
 
+// --- STUDENT LOGIN ---
 app.post('/student-login', async (req, res) => {
     try {
         const student = await User.findOne({ email: req.body.email }).populate('enrolledCourses');
@@ -180,19 +189,19 @@ app.post('/student-login', async (req, res) => {
             <a href="/register" class="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase">Register Here</a>
         </body></html>`);
         let content = student.enrolledCourses.map(c => `
-            <div class="bg-white p-10 rounded-[2.5rem] mb-6 shadow-xl border border-slate-50 transition-all hover:scale-[1.01]">
+            <div class="bg-white p-6 md:p-10 rounded-[2.5rem] mb-6 shadow-xl border border-slate-50 transition-all hover:scale-[1.01]">
                 <h3 class="font-black text-slate-800 text-2xl mb-2">${c.title}</h3>
                 <p class="text-[10px] text-indigo-500 font-black uppercase tracking-widest mb-8 italic">Academy Mastery Track</p>
                 <div class="w-full bg-slate-100 h-3 rounded-full my-8 overflow-hidden"><div style="width:${student.courseProgress}%" class="bg-indigo-600 h-full transition-all duration-1000 shadow-lg shadow-indigo-200"></div></div>
-                <div class="flex justify-between items-center">
+                <div class="flex justify-between items-center gap-4 flex-wrap">
                     <a href="/view-lesson/${c._id}" class="bg-indigo-600 text-white px-8 py-4 rounded-2xl text-[11px] font-black uppercase shadow-lg shadow-indigo-100">Resume Learning</a>
                     <a href="/view-certificate/${student.fullName}/${c.title}" class="text-[11px] font-black text-slate-400 uppercase hover:text-indigo-600">Certificate</a>
                 </div>
             </div>`).join('');
         res.send(`<!DOCTYPE html><html>${headHTML('Student Portal')}
-        <body class="bg-[#F8FAFC] p-6 md:p-20 flex flex-col min-h-screen"><div class="max-w-2xl mx-auto flex-grow">
+        <body class="bg-[#F8FAFC] p-4 md:p-20 flex flex-col min-h-screen"><div class="max-w-2xl mx-auto flex-grow w-full">
             <div class="flex justify-between items-center mb-12">
-                <div><h1 class="text-3xl font-black italic tracking-tighter uppercase">My Academy</h1><p class="text-sm font-medium text-slate-400 mt-1">Signed in as: ${student.fullName}</p></div>
+                <div><h1 class="text-2xl md:text-3xl font-black italic tracking-tighter uppercase">My Academy</h1><p class="text-xs md:text-sm font-medium text-slate-400 mt-1">Signed in as: ${student.fullName}</p></div>
                 <a href="/" class="text-[11px] font-black uppercase text-slate-400 hover:text-rose-500">Logout</a>
             </div>
             ${content || '<div class="bg-white p-20 rounded-[2.5rem] text-center font-black text-slate-300 uppercase border-2 border-dashed">No Courses Enrolled</div>'}
@@ -200,6 +209,7 @@ app.post('/student-login', async (req, res) => {
     } catch (e) { res.status(500).send(e.message); }
 });
 
+// --- REGISTER PAGE ---
 app.get('/register', (req, res) => {
     res.send(`<!DOCTYPE html><html>${headHTML('Join EDUCA')}
     <body class="bg-indigo-600 flex flex-col items-center justify-center min-h-screen p-6">
@@ -214,6 +224,7 @@ app.get('/register', (req, res) => {
         </form></body></html>`);
 });
 
+// --- HELPER ROUTES ---
 app.post('/register-student', async (req, res) => {
     try { await new User(req.body).save(); res.send(`<html>${headHTML('Success')}<body class="p-20 text-center font-sans"><h1>Success!</h1><a href="/" class="text-indigo-600 font-bold">Go Login</a></body></html>`); } catch (e) { res.send(e.message); }
 });
@@ -282,14 +293,19 @@ app.get('/view-certificate/:name/:course', (req, res) => {
     res.send(`<!DOCTYPE html><html>${headHTML('Certificate')}
     <body class="bg-[#F8FAFC] flex flex-col items-center justify-center min-h-screen p-6">
         <a href="/" class="mb-12 text-[11px] font-black uppercase text-slate-400 hover:text-indigo-600 transition-colors font-bold">← Back to Portal</a>
-        <div style="width:100%;max-width:700px;border:1px solid #E2E8F0;padding:80px;text-align:center;font-family:serif;background:white;box-shadow:0 30px 60px rgba(0,0,0,0.05);">
-            <h1 class="text-5xl font-black mb-12 tracking-tighter">CERTIFICATE</h1>
+        <div style="width:100%;max-width:700px;border:1px solid #E2E8F0;padding:40px;text-align:center;font-family:serif;background:white;box-shadow:0 30px 60px rgba(0,0,0,0.05);">
+            <h1 class="text-4xl md:text-5xl font-black mb-12 tracking-tighter">CERTIFICATE</h1>
             <p class="italic text-slate-400 mb-12 text-sm uppercase tracking-widest">This honors that</p>
-            <h2 class="text-4xl font-bold mb-12 border-b-2 border-slate-100 pb-4 mx-auto w-fit">${req.params.name}</h2>
+            <h2 class="text-3xl md:text-4xl font-bold mb-12 border-b-2 border-slate-100 pb-4 mx-auto w-fit">${req.params.name}</h2>
             <p class="italic text-slate-400 mb-12 text-sm uppercase tracking-widest">has completed the masterclass</p>
             <h3 class="text-2xl font-black text-indigo-600 tracking-tight">${req.params.course}</h3>
-        </div></body></html>`);
+            <div class="mt-20 pt-10 border-t border-slate-100 flex justify-between items-center px-10">
+                <div class="text-left"><p class="text-[9px] font-black uppercase text-slate-400">Date Issued</p><p class="text-sm font-bold text-slate-800">Feb 2026</p></div>
+                <div class="text-right"><p class="text-[9px] font-black uppercase text-slate-400">ID No.</p><p class="text-sm font-bold text-slate-800">EDUCA-7782</p></div>
+            </div>
+        </div>
+    </body></html>`);
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Premium LMS Engine Online: http://localhost:${PORT}` ));
+app.listen(PORT, () => console.log(`🚀 EDUCA Academy Live on Port ${PORT}`));
