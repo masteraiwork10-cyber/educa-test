@@ -82,7 +82,7 @@ const FOOTER = `
 <footer class="mt-auto border-t border-white/10 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950">
   <div class="max-w-7xl mx-auto px-6 py-10 flex flex-col md:flex-row justify-between items-center gap-8">
     <div class="flex items-center gap-3">
-      <img src="/assets/hero-cloud.png" class="w-8 h-8 opacity-60" alt="Cloud Icon">
+      <img src="/assets/favicon.png" class="w-8 h-8 opacity-60" alt="Cloud Icon">
       <div>
         <span class="text-2xl font-black italic text-indigo-300">EDUCA.</span>
         <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
@@ -170,9 +170,9 @@ app.get('/', async (req, res) => {
 
     res.send(`<!DOCTYPE html>
 <html>${headHTML('Deploy Your Future')}
-<body class="min-h-screen flex flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
+<body class="min-h-screen flex flex-col bg-gradient-to-b from-slate-100 via-slate-200 to-slate-100 text-slate-900">
   <!-- NAVBAR -->
-  <nav class="nav-container bg-slate-950/70 backdrop-blur-xl sticky top-0 z-50 border-b border-white/10 min-h-[5rem] flex items-center justify-between px-4 md:px-8">
+  <nav class="nav-container bg-white/80 backdrop-blur-xl ... text-slate-900 border-b border-slate-200">
     <div class="flex items-center gap-2">
       <img src="/assets/favicon.png" class="w-6 h-6" alt="Cloud Logo">
       <a href="/" class="text-2xl font-black italic text-indigo-300">EDUCA.</a>
@@ -319,7 +319,7 @@ app.get('/', async (req, res) => {
           <button type="submit" class="bg-emerald-500 text-slate-950 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-lg hover:bg-emerald-300 transition-all">
             Submit & Ping on WhatsApp
           </button>
-          <a href="https://wa.me/${process.env.OWNER_WHATSAPP || '919999999999'}?text=Hi%20I%20want%20SAP%20FICO%20course%20details"
+          <a href="https://wa.me/${process.env.OWNER_WHATSAPP || '919741144608'}?text=Hi%20I%20want%20SAP%20FICO%20course%20details"
              target="_blank"
              class="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-emerald-300">
             Or chat directly on WhatsApp →
@@ -342,7 +342,7 @@ app.post('/enquiry', async (req, res) => {
   try {
     const { name, phone, email, course, message } = req.body;
 
-    const ownerNumber = process.env.OWNER_WHATSAPP || '919999999999';
+    const ownerNumber = process.env.OWNER_WHATSAPP || '919741144608';
     const baseText =
       `New%20course%20enquiry` +
       `%0AName:%20${encodeURIComponent(name)}` +
